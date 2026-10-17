@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FuzzTag · ANIMA Prompt Editor</title>
+<style>
+:root{color-scheme:dark;--bg:#14131a;--panel:#1d1c26;--line:#34323f;--tx:#e8e6f0;--mut:#8f8ba3;--ac:#8ab4ff;--bad:#ff7a8a;--k0:#009be6;--k1:#ff8a8b;--k3:#c797ff;--k4:#35c64a;--k5:#ead084}
+@media(prefers-color-scheme:light){:root{color-scheme:light;--bg:#f3f2f7;--panel:#fff;--line:#d6d3e2;--tx:#1d1b29;--mut:#6b6780;--ac:#2f5fd0;--bad:#c2243c;--k0:#0075f8;--k1:#c00004;--k3:#a800aa;--k4:#00ab2c;--k5:#c47a00}}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,"Noto Sans Thai",sans-serif;-webkit-text-size-adjust:100%}
+main{max-width:880px;margin:0 auto;padding:20px 16px 60px;display:grid;gap:14px}
+h1{font-size:20px;margin:0}h1 small{font-size:12px;font-weight:500;color:var(--mut);margin-left:6px}@media(max-width:700px){h1 small{display:block;margin:2px 0 0}}h2{font-size:14px;margin:0 0 6px;color:var(--mut);font-weight:600}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;position:relative}
+textarea{width:100%;background:transparent;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:10px;font:14px/1.5 ui-monospace,Menlo,Consolas,monospace;resize:vertical;min-height:90px}
+textarea:focus,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,select,input[type=text]{background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:7px;padding:6px 11px;font:inherit;cursor:pointer}
+button:disabled{opacity:.4;cursor:default}
+button.p{background:var(--ac);color:#fff;border-color:var(--ac)}label{color:var(--mut);font-size:13px;display:flex;gap:5px;align-items:center}
+#status{display:none}
+#sync{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:8px;z-index:15;display:flex;align-items:center;gap:6px;padding:3px 10px 3px 8px;border-radius:999px;font:600 12px/1.4 system-ui,sans-serif;border:1px solid var(--k4);color:var(--k4);background:color-mix(in srgb,var(--panel) 88%,var(--k4));box-shadow:0 2px 8px #0004;cursor:default}
+#sync:before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+#sync.off{border-color:var(--bad);color:var(--bad);background:color-mix(in srgb,var(--panel) 88%,var(--bad));cursor:pointer}
+#sync.off:before{animation:sp 1.4s infinite}#sync.wait{border-color:var(--mut);color:var(--mut);background:var(--panel)}
+@keyframes sp{50%{opacity:.25}}@media(prefers-reduced-motion:reduce){#sync.off:before{animation:none}}
+#ac{position:absolute;left:12px;right:12px;z-index:5;background:var(--panel);border:1px solid var(--ac);border-radius:8px;max-height:260px;overflow:auto;display:none}
+#ac.fx{position:fixed;left:8px;right:8px;z-index:25;max-height:min(38vh,260px);box-shadow:0 -8px 24px #0006}
+#ac div{padding:5px 10px;display:flex;gap:10px;cursor:pointer;align-items:center}#ac div.on{background:color-mix(in srgb,var(--ac) 22%,transparent)}
+#ac small{color:var(--mut);margin-left:auto}#ac .wk{display:none;border:none;background:none;padding:0 4px;color:var(--mut)}
+.c0{color:var(--k0)}.c1{color:var(--k1)}.c3{color:var(--k3)}.c4{color:var(--k4)}.c5{color:var(--k5)}
+#chips{display:flex;flex-wrap:wrap;gap:6px;min-height:34px}
+.chip{--c:hsl(var(--h) 60% 62%);display:inline-flex;gap:6px;align-items:center;padding:3px 4px 3px 10px;border-radius:999px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 16%,transparent);cursor:grab;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;position:relative;white-space:nowrap}
+.chip.ng{--c:#8f8ba3;border-style:dashed}.chip.zero{--c:var(--bad)}.wv.z{color:var(--bad);font-weight:700}.leg span.ng:before{background:#8f8ba3}
+.chip.unk{border-style:dashed;border-color:var(--bad)}.chip.unk>span:nth-child(2){text-decoration:underline wavy var(--bad)}
+.chip b{font-weight:600;font-size:12px;color:var(--c)}.chip i{font-style:normal;cursor:pointer;padding:0 6px;color:var(--mut)}.chip i:hover{color:var(--bad)}
+.chip .grip{display:none;touch-action:none;padding:4px 4px 4px 0;color:var(--mut);cursor:grab;line-height:1}
+.leg{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:var(--mut);margin-top:8px}.leg span:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:hsl(var(--h) 60% 62%);margin-right:4px}
+#warn{color:var(--bad);font-size:13px}#warn:empty{display:none}#warn .soft{color:var(--k5);font-size:12px}
+pre{margin:0;white-space:pre-wrap;word-break:break-word;font:14px/1.5 ui-monospace,Menlo,Consolas,monospace}
+.snip{display:inline-flex;gap:2px}
+summary{cursor:pointer;font-weight:600}
+kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 6px;font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--bg);white-space:nowrap}
+body.dg{user-select:none;-webkit-user-select:none;cursor:grabbing}
+.chip.dragging{position:fixed;z-index:20;margin:0;pointer-events:none;cursor:grabbing;transform:scale(1.07) rotate(-2deg);background:color-mix(in srgb,var(--c) 32%,var(--panel));box-shadow:0 12px 28px #0009}
+.ph{border:2px dashed var(--ac);border-radius:999px;background:color-mix(in srgb,var(--ac) 12%,transparent)}
+@keyframes land{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ac) 80%,transparent)}100%{box-shadow:0 0 0 12px transparent}}
+.chip.landed{animation:land .7s ease-out}
+@media(prefers-reduced-motion:reduce){.chip.landed{animation:none}}
+.hint{font-size:12px;color:var(--mut)}#cnt{margin-left:auto;font-size:12px;color:var(--mut)}
+
+/* block menu (right-click on computer, tap on phone) */
+#menu{position:fixed;display:none;z-index:30;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;box-shadow:0 12px 32px #0007;width:min(380px,calc(100vw - 16px));font-size:14px;max-height:calc(100vh - 16px);overflow:auto}
+#back{position:fixed;inset:0;background:#0006;z-index:29;display:none}
+.mh{display:flex;align-items:center;gap:8px}.mh b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}
+.mr{display:grid;grid-template-columns:64px 1fr;gap:6px;align-items:start;margin-top:9px}
+.mr>span{color:var(--mut);font-size:12px;padding-top:6px}
+.opts{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.opt{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:13px}
+.opt:hover{border-color:var(--ac)}.opt.on{background:color-mix(in srgb,var(--ac) 25%,transparent);border-color:var(--ac)}.opt.chk{opacity:.55}
+.sw{width:12px;height:12px;border-radius:50%;border:1px solid #0006;flex:none}
+.wv{min-width:52px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.foot{display:flex;gap:8px;margin-top:11px;padding-top:9px;border-top:1px solid var(--line)}.foot .del{margin-left:auto;color:var(--bad)}
+.mnote{font-size:12px;color:var(--mut);margin-top:8px}
+.demo{position:static;display:block;width:auto;max-width:380px;box-shadow:none;margin-top:8px;background:var(--bg)}
+
+/* v7: colors, zero weight, lock/mute/select, pill, plus buttons, status dots */
+.foot{flex-wrap:wrap}.chip{--c:hsl(var(--h) 62% var(--l,62%))}.leg span:before{background:hsl(var(--h) 62% var(--l,62%))}
+#chips .chip b{font-size:.8em;color:var(--tx)}
+.chip.zero{--c:var(--bad);border:2px dotted var(--bad);background:transparent}.chip.zero b{color:var(--bad)}
+.chip.mute{opacity:.45}.chip.mute>span:nth-child(2){text-decoration:line-through}.chip.lock>span:nth-child(2):after{content:" 🔒";font-size:.75em}.chip.sel{outline:2px solid var(--ac);outline-offset:2px}
+#selbar{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:16;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:94vw;padding:8px 10px;background:var(--panel);border:1px solid var(--ac);border-radius:14px;box-shadow:0 8px 28px #000a}#selbar[hidden]{display:none}#selbar span{align-self:center;font-size:12px;color:var(--mut);padding:0 4px}
+@media(max-width:700px){#selbar{bottom:calc(68px + env(safe-area-inset-bottom))}}
+.og{display:inline-flex;align-items:center;max-width:100%}
+.og.chk{opacity:.55}
+.og.sp{align-items:stretch;border:1px solid var(--line);border-radius:999px;background:var(--bg);overflow:hidden}
+.og.sp:hover{border-color:var(--ac)}
+.og.sp.on{background:color-mix(in srgb,var(--ac) 25%,transparent);border-color:var(--ac)}
+.og.sp>.opt{border:0;border-radius:0;background:transparent;min-width:0}
+.og.sp>.opt:hover{background:color-mix(in srgb,var(--ac) 14%,transparent)}
+.og.sp>.plus{--pw:32px;position:relative;flex:none;width:var(--pw);min-width:var(--pw);max-width:var(--pw);padding:0;gap:0;overflow:hidden;border-left:1px solid var(--line);color:var(--mut);font-size:16px;line-height:1}
+.og.sp>.plus .g{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;line-height:1}
+.og.sp.on>.plus{border-left-color:var(--ac)}
+.og.sp>.plus:hover{background:color-mix(in srgb,var(--ac) 14%,transparent);color:var(--tx)}
+.og.sp>.plus.on{color:var(--tx);background:color-mix(in srgb,var(--ac) 28%,transparent)}
+@media(max-width:700px),(pointer:coarse){.og.sp>.plus{--pw:42px;font-size:18px}}
+.mr.fold>span:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;background:var(--mut)}.mr.fold>span[data-s=ok]:before{background:#3ccf6e}.mr.fold>span[data-s=bad]:before{background:#ff5d6c}
+#sync .s{display:none}#sync.min .l{display:none}#sync.min .s{display:inline}
+.hrow{display:flex;gap:6px;margin-bottom:6px}.hrow .opt{flex:1;display:block;text-align:left}
+/* folded See also / Related rows */
+.mr.fold{display:block}.mr.fold>span{display:block;padding:7px 0 3px;color:var(--ac);font-size:13px;font-weight:600;cursor:pointer;user-select:none;-webkit-user-select:none}.mr.fold>.opts{margin-top:5px}.opts[hidden]{display:none}
+/* see also / related chips */
+.rlt{flex-wrap:wrap}.opt small{opacity:.6;margin-left:6px;font-size:11px}.opts.dim{opacity:.6;font-size:13px}
+/* long tags and block size */
+main>*{min-width:0}
+#chips .chip{font-size:calc(15px*var(--cs,1));padding:.2em .3em .2em .65em;gap:.4em;white-space:normal;max-width:100%;min-width:0;border-radius:1.1em;line-height:1.25}
+#chips .chip>span:nth-child(2){min-width:0;overflow-wrap:anywhere}
+#chips .chip i{padding:.1em max(.45em,8px);font-size:1.15em}
+#chips .chip.lg{font-size:calc(13px*var(--cs,1))}#chips .chip.xl{font-size:calc(11.5px*var(--cs,1))}
+.opt{max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left}
+.bh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.rz{display:flex;gap:4px;align-items:center;color:var(--mut);font-size:12px}.rz button{min-height:0;padding:1px 10px;line-height:1.3;font-size:16px}
+/* connections, related panel, close guide */
+#conn{display:grid;gap:6px;margin-top:10px;padding:8px 10px;border:1px solid var(--ac);border-radius:10px;background:color-mix(in srgb,var(--ac) 8%,transparent)}#conn[hidden]{display:none}
+.cth{font-size:12px;color:var(--mut);font-weight:600}.cnr{display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:13px}.cnr button{padding:3px 12px;min-height:0}
+#rel{position:fixed;z-index:30;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,92vw);max-height:72vh;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px #000a;padding:12px}#rel[hidden]{display:none}
+.rlh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.rlt{display:flex;gap:6px;margin-bottom:8px}.rlt .on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.rlb{overflow:auto;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}.rlc{padding:3px 10px;border-radius:999px;min-height:0}.rlc.on{opacity:.4}
+.gclose{position:sticky;bottom:10px;display:flex;justify-content:center;pointer-events:none}.gclose button{pointer-events:auto;background:var(--ac);color:#fff;border-color:var(--ac);border-radius:999px;padding:8px 20px;box-shadow:0 4px 16px #0007}
+@media(max-width:700px){#rel{top:auto;bottom:0;left:0;right:0;transform:none;width:auto;border-radius:16px 16px 0 0;max-height:78vh}.gclose{bottom:calc(68px + env(safe-area-inset-bottom))}}
+
+/* phone dock */
+#dock{display:none;position:fixed;left:0;right:0;bottom:0;z-index:15;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line)}
+#dock button{flex:1}
+
+/* guide */
+.gin{display:grid;gap:12px;margin-top:10px}.lead{margin:0}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch}
+.flow div{flex:1 1 120px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;gap:1px;align-content:start}
+.flow em{font-style:normal;background:var(--ac);color:#fff;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700}
+.flow small{color:var(--mut);font-size:12px}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-top:4px}
+.tabs button{border-radius:8px 8px 0 0;border-bottom:none;background:transparent;font-weight:600}.tabs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.gc{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.gc+.gc{margin-top:10px}.gc h3{margin:0 0 2px;font-size:15px}.gc p{margin:4px 0;color:var(--mut);font-size:13px}
+.rows{display:grid;gap:7px;margin-top:8px}
+.rows .r{display:grid;grid-template-columns:minmax(130px,36%) 1fr;gap:4px 14px;font-size:13px;align-items:start;padding-top:7px;border-top:1px dashed var(--line)}
+.rows .r:first-child{border-top:none;padding-top:0}
+.rows .a{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.rows .b{color:var(--mut)}
+.note{border-left:3px solid var(--ac);padding:5px 10px;background:color-mix(in srgb,var(--ac) 8%,transparent);font-size:13px;border-radius:0 6px 6px 0;margin-top:8px}
+.gc .chip{cursor:default;font-size:13px;padding:2px 4px 2px 9px}.gc .chip.sm i{display:none}.gc .chip.sm{padding-right:9px}
+.gc .chip .grip.show{display:inline-block}
+.gt{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}.gt td,.gt th{text-align:left;padding:5px 8px;border-top:1px solid var(--line);vertical-align:top}.gt th{color:var(--mut);font-weight:600;border-top:none}
+.sg{display:flex;flex-wrap:wrap;gap:6px}
+
+@media(max-width:700px){
+ main{padding:14px 12px 96px}
+ textarea,input,select{font-size:16px}
+ button,select,input[type=text]{min-height:42px}
+ .chip{padding:5px 6px 5px 8px;font-size:15px}.chip i{padding:2px 10px;font-size:20px}
+ #dock{display:flex}
+ #menu{left:0;right:0;bottom:0;top:auto;width:auto;max-height:82vh;border-radius:16px 16px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom))}
+ .opt{padding:8px 12px;font-size:15px}
+ .stp button{min-width:50px}
+ .rows .r{grid-template-columns:1fr}
+}
+@media(any-pointer:coarse){.chip .grip{display:inline-block;padding:8px 6px 8px 0;font-size:16px}}
+@media(pointer:coarse){
+ #ac div{padding:10px 12px}#ac .wk{display:inline-block;font-size:18px;min-height:0;padding:0 8px}
+ .opt{padding:8px 12px;font-size:15px}
+ #menu button{min-height:42px}
+}
+@media(pointer:coarse) and (min-width:701px){#menu{left:50%;right:auto;top:auto;bottom:0;transform:translateX(-50%);width:min(560px,100%);max-height:82vh;border-radius:16px 16px 0 0;--pt:14px;--px:14px;--pb:calc(14px + env(safe-area-inset-bottom));padding:14px 14px calc(14px + env(safe-area-inset-bottom))}}
+#menu select{max-width:100%;width:100%}
+#menu{--pt:10px;--pb:10px;--px:10px}
+#menu .mh{position:sticky;top:calc(-1*var(--pt));z-index:3;margin:calc(-1*var(--pt)) calc(-1*var(--px)) 0;padding:var(--pt) var(--px) 8px;background:var(--panel);border-bottom:1px solid var(--line)}
+#menu .foot{position:sticky;bottom:calc(-1*var(--pb));z-index:3;background:var(--panel);margin:11px calc(-1*var(--px)) calc(-1*var(--pb));padding:9px var(--px) var(--pb)}
+@media(max-width:700px){#menu{--pt:14px;--px:14px;--pb:calc(14px + env(safe-area-inset-bottom))}}
+.og .plus.cur{pointer-events:none}
+#demoMenu,#demoMenu2{display:flex;flex-direction:column;max-width:420px}
+.dbody{overflow:auto;max-height:210px;padding-right:2px}
+.dn{font-size:11px;color:var(--ac);margin:6px 0 2px;display:flex;align-items:center;gap:6px}.dn:before{content:"";flex:none;width:14px;border-top:1px dashed var(--ac)}.dn:after{content:"";flex:1;border-top:1px dashed var(--ac);opacity:.4}
+#demoMenu .mh,#demoMenu2 .mh{padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:2px}
+#demoMenu .foot,#demoMenu2 .foot{margin-top:6px}
+.leg span{cursor:pointer}.leg span.hl{font-weight:700;text-decoration:underline}#grpbar{align-items:center;gap:6px}#grpbar button{padding:3px 9px;font-size:12px}.chip.weak{border-style:dashed}
+</style></head><body><main>
+<div class="bar"><h1>FuzzTag <small>ANIMA Prompt Editor</small></h1><span id="status"></span></div>
+<div id="sync" class="wait" role="status" aria-live="polite" title="Checking the Danbooru connection...">Checking tags…</div>
+
+<details class="box" id="guide" open><summary>📖 Guide: what this tool does and how to use it</summary><div class="gin">
+
+<p class="lead">A notepad for writing prompts made of <b>Danbooru tags</b> (for ANIMA, Illustrious and similar models). It suggests real tags while you type, cleans the formatting, and lets you change weight, color, length and order of every tag.</p>
+
+<div class="flow">
+<div><em>1</em><b>Type</b><small>2 or more letters of a tag</small></div>
+<div><em>2</em><b>Pick</b><small>choose from the suggestions</small></div>
+<div><em>3</em><b>Tweak</b><small>weight, color, length, order</small></div>
+<div><em>4</em><b>Copy</b><small>paste into your image generator</small></div>
+</div>
+
+<div class="tabs" role="tablist"><button type="button" data-t="pc">💻 Computer (mouse + keyboard)</button><button type="button" data-t="mob">📱 Phone / tablet (touch)</button></div>
+
+<section id="g-pc">
+<div class="gc"><h3>✍️ Typing tags</h3>
+<div class="rows">
+<div class="r"><div class="a">Type 2 or more letters</div><div class="b">Real Danbooru tags appear with the number of images using each one. Tags that start with your letters come first, “alias of …” matches last.</div></div>
+<div class="r"><div class="a"><kbd>↑</kbd> <kbd>↓</kbd></div><div class="b">Move through the list.</div></div>
+<div class="r"><div class="a"><kbd>Enter</kbd> or <kbd>Tab</kbd></div><div class="b">Insert the highlighted tag.</div></div>
+<div class="r"><div class="a"><kbd>Esc</kbd></div><div class="b">Close the list.</div></div>
+<div class="r"><div class="a">Right-click a suggestion</div><div class="b">Opens that tag's Danbooru wiki in a new tab.</div></div>
+<div class="r"><div class="a"><kbd>,</kbd> comma</div><div class="b">Finishes the tag: underscores become spaces, <code>(</code> <code>)</code> become <code>\(</code> <code>\)</code>, and duplicates are removed. Pasting a whole prompt is cleaned the same way. Face tags like <code>^_^</code> and <code>o_o</code> keep their underscores, and <code>:(</code> and <code>:)</code> are fine.</div></div>
+</div></div>
+
+<div class="gc"><h3>⚖️ Changing weight</h3>
+<p>Weight 1 is normal and is written plain. Any other weight is written like <code>(blue eyes:1.2)</code>. Range: 0 to 10.</p>
+<div class="rows">
+<div class="r"><div class="a"><kbd>Wheel</kbd> over a block</div><div class="b">±<b>0.05</b> per notch.</div></div>
+<div class="r"><div class="a"><kbd>Shift</kbd> + <kbd>Wheel</kbd> over a block</div><div class="b">±<b>1</b> per notch (big step).</div></div>
+<div class="r"><div class="a"><kbd>Ctrl</kbd> + <kbd>↑</kbd> / <kbd>↓</kbd> in the tag box</div><div class="b">±<b>0.05</b> for the tag at the text cursor. (<kbd>Cmd</kbd> on Mac.)</div></div>
+<div class="r"><div class="a"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>↑</kbd> / <kbd>↓</kbd></div><div class="b">Same, but ±<b>1</b>.</div></div>
+<div class="r"><div class="a">Right-click a block</div><div class="b">Opens the block menu (see below) with the −1 / −0.05 / +0.05 / +1 buttons and presets.</div></div>
+</div></div>
+
+<div class="gc"><h3>↕️ Moving, deleting and selecting blocks</h3>
+<div class="rows">
+<div class="r"><div class="a">Drag a block</div><div class="b">It lifts and follows the mouse. A dashed gap shows where it will land and the other blocks slide aside. Release to drop, <kbd>Esc</kbd> cancels.</div></div>
+<div class="r"><div class="a">Click <b>×</b> on a block</div><div class="b">Deletes it.</div></div>
+<div class="r"><div class="a"><b>Select</b> button, then click blocks</div><div class="b">Pick several blocks and change them together (see “Select several blocks” below).</div></div>
+</div></div>
+
+<div class="gc"><h3>⌨️ Shortcut cheat sheet</h3>
+<table class="gt"><tr><th>Keys</th><th>Does</th></tr>
+<tr><td><kbd>Wheel</kbd> over a block</td><td>weight ±0.05</td></tr>
+<tr><td><kbd>Shift</kbd> + <kbd>Wheel</kbd></td><td>weight ±1</td></tr>
+<tr><td><kbd>Ctrl</kbd> + <kbd>↑</kbd><kbd>↓</kbd></td><td>weight ±0.05 for the tag at the text cursor</td></tr>
+<tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>↑</kbd><kbd>↓</kbd></td><td>weight ±1</td></tr>
+<tr><td>Right-click a block</td><td>block menu</td></tr>
+<tr><td>Right-click a suggestion</td><td>Danbooru wiki</td></tr>
+<tr><td><kbd>Ctrl</kbd> + <kbd>Z</kbd> / <kbd>Ctrl</kbd> + <kbd>Y</kbd></td><td>undo / redo</td></tr>
+<tr><td><kbd>Ctrl</kbd> + <kbd>Enter</kbd> in the tag box</td><td>copy the final prompt</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>close the suggestions, the menu or the history, or cancel a drag</td></tr>
+</table></div>
+</section>
+
+<section id="g-mob" hidden>
+<div class="note">Touch screens have no mouse wheel and no right-click, so everything is done with taps and buttons. Keyboard shortcuts only work if you attach a keyboard.</div>
+
+<div class="gc"><h3>✍️ Typing tags</h3>
+<div class="rows">
+<div class="r"><div class="a">Type 2 or more letters</div><div class="b">The suggestion list opens just above your keyboard, with how many images use each tag.</div></div>
+<div class="r"><div class="a">Tap a suggestion</div><div class="b">Inserts it and keeps the keyboard open, so you can keep typing.</div></div>
+<div class="r"><div class="a">Tap <b>ⓘ</b> on a suggestion</div><div class="b">Opens that tag's Danbooru wiki in a new tab.</div></div>
+<div class="r"><div class="a">Type a comma <b>,</b></div><div class="b">Finishes the tag: underscores become spaces, <code>(</code> <code>)</code> become <code>\(</code> <code>\)</code>, and duplicates are removed. Pasting a whole prompt is cleaned the same way. Face tags like <code>^_^</code> and <code>o_o</code> keep their underscores, and <code>:(</code> and <code>:)</code> are fine.</div></div>
+</div></div>
+
+<div class="gc"><h3>⚖️ Changing weight</h3>
+<p>This is where the computer's wheel and <kbd>Shift</kbd> shortcuts live on a touch screen: <b>tap a block</b> to open its menu.</p>
+<div class="rows">
+<div class="r"><div class="a">Tap a block</div><div class="b">The block menu slides up from the bottom (example below). Tap outside it or press ✕ to close.</div></div>
+<div class="r"><div class="a">Weight buttons</div><div class="b"><b>−1</b> and <b>+1</b> are the big steps. <b>−0.05</b> and <b>+0.05</b> are the small steps: press and hold to keep going. The preset row jumps straight to a value (0.5 to 2, or 1 to reset).</div></div>
+<div class="r"><div class="a"><b>Select</b>, then tap blocks</div><div class="b">Changes the weight of several blocks at once (±0.05 or back to 1).</div></div>
+</div></div>
+
+<div class="gc"><h3>✋ Moving and deleting blocks</h3>
+<div class="rows">
+<div class="r"><div class="a"><span class="chip" style="--h:252"><span class="grip show">⠿</span><span>blue eyes</span><i>×</i></span></div><div class="b">Press and drag the <b>⠿ handle</b> on the left of a block. A dashed gap shows where it will land, and letting go drops it. Dragging anywhere else just scrolls the page.</div></div>
+<div class="r"><div class="a">Tap <b>×</b></div><div class="b">Deletes the block.</div></div>
+</div></div>
+
+<div class="gc"><h3>📋 Copy and Undo</h3>
+<div class="rows">
+<div class="r"><div class="a"><b>Phone</b> (narrow screen)</div><div class="b">A bar at the bottom always shows <b>↶ Undo</b> and <b>Copy prompt</b>. <b>Redo</b> is in the toolbar under the tag box.</div></div>
+<div class="r"><div class="a"><b>Tablet</b> (wide screen)</div><div class="b">No bottom bar. Use <b>Undo</b> and <b>Redo</b> in the toolbar under the tag box, and <b>Copy prompt</b> under “Final prompt”.</div></div>
+</div></div>
+
+<div class="gc"><h3>🔄 Moving between phone and computer</h3>
+<div class="rows">
+<div class="r"><div class="a">Copy backup / Restore backup</div><div class="b">Under “Snippets and backup”. Copy on one device, paste on the other. Your boxes are replaced and snippets are added.</div></div>
+<div class="r"><div class="a">Save .json / Load file</div><div class="b">Under the final prompt. The same idea, as a file.</div></div>
+<div class="r"><div class="a">Opening the tool on a phone</div><div class="b">Phones often cannot open a downloaded .html file. Easiest is to put the file on a free static web host and open that link. Android can sometimes open it directly in Chrome.</div></div>
+</div></div>
+</section>
+
+<div class="gc"><h3>🧱 Reading a tag block (same on every device)</h3>
+<p>Every tag becomes a block under the text box.</p>
+<div class="rows">
+<div class="r"><div class="a sg"><span class="chip sm" style="--h:200"><span class="c0">blue eyes</span></span><span class="chip sm" style="--h:200"><span class="c1">artist name</span></span><span class="chip sm" style="--h:200"><span class="c3">blue archive</span></span><span class="chip sm" style="--h:200"><span class="c4">hoshino (blue archive)</span></span><span class="chip sm" style="--h:200"><span class="c5">highres</span></span></div>
+<div class="b"><b>Name color</b> = tag type on Danbooru: blue normal, red artist, purple series, green character, orange meta.</div></div>
+<div class="r"><div class="a sg"><span class="chip sm" style="--h:226"><span>long hair</span></span><span class="chip sm" style="--h:252"><span>blue eyes</span></span><span class="chip sm" style="--h:330"><span>white shirt</span></span><span class="chip sm" style="--h:408"><span>thighhighs</span></span></div>
+<div class="b"><b>Border and fill color</b> = the sort group (hair, eyes, top, legwear and so on). The color key under the blocks lists them.</div></div>
+<div class="r"><div class="a"><span class="chip sm" style="--h:252"><span>blue eyes</span><b>1.2</b></span></div>
+<div class="b"><b>Number</b> = the weight. No number means 1 (normal).</div></div>
+<div class="r"><div class="a"><span class="chip sm unk" style="--h:252"><span>blue eyez</span></span></div>
+<div class="b"><b>Red dashed wavy outline</b> = Danbooru does not know this tag (a typo or an alias). Pick the suggested tag instead.</div></div>
+<div class="r"><div class="a"><b>Gray dashed block</b></div>
+<div class="b"><b>Uncategorized</b>: the app has not placed this tag in a group yet (see “Groups and sorting”).</div></div>
+<div class="r"><div class="a"><b>Red dotted block</b></div>
+<div class="b"><b>Weight 0</b>: the tag has no effect. Delete it or raise it.</div></div>
+</div></div>
+
+<div class="gc"><h3>🎛️ The block menu</h3>
+<p><b>Right-click</b> a block on a computer, or <b>tap</b> it on a touch screen. Example for <code>blue hair</code>:</p>
+<div id="demoMenu" class="demo" style="border:1px solid var(--line);border-radius:12px;padding:10px"></div>
+<p style="margin:10px 0 4px">Most rows (colors too) have a <b>+</b> on the right side of each option, example: posture on <code>sitting</code>. Tapping the name <b>replaces</b> the tag, tapping <b>+</b> <b>adds</b> that option as an extra tag, so you can keep two colors like <code>red hair, blue hair</code>. A <b>✓</b> marks the current tag or an extra tag you added: tap it to undo or remove.</p>
+<div id="demoMenu2" class="demo" style="border:1px solid var(--line);border-radius:12px;padding:10px"></div>
+<div class="rows">
+<div class="r"><div class="a"><b>Weight</b></div><div class="b">Four step buttons and presets. Weights above 1.6 show a short yellow note (they might distort on Illustrious); it is only a note.</div></div>
+<div class="r"><div class="a"><b>Color</b></div><div class="b">Swaps the color (blue hair → pink hair) or adds one in front of a plain tag (skirt → black skirt).</div></div>
+<div class="r"><div class="a"><b>Length, style and other swap rows</b></div><div class="b">Only appear when the tag has real alternatives: hair length, sleeves, skirt length, smile, posture, angle, clothing states, accessories, and many more. Tap an option to replace the tag (the weight is kept), tap the highlighted one again to undo. Options with no posts on Danbooru are hidden.</div></div>
+<div class="r"><div class="a"><b>See also</b> and <b>Related</b></div><div class="b">Folded rows on every block. Tap a title to open it: tags from the tag's wiki page, or tags often used with it. Tap a tag to add it next to the block. Highlighted ones are already in your prompt: tap again to remove them.</div></div>
+<div class="r"><div class="a"><b>Sort group</b></div><div class="b">A drop-down for fixing a tag the app put in the wrong group. Choose <b>Auto</b> to undo it. Remembered on this device and saved in <b>Save .json</b>.</div></div>
+<div class="r"><div class="a"><b>Guess this tag</b></div><div class="b">Only on gray or weak-guess blocks. See “Groups and sorting”.</div></div>
+<div class="r"><div class="a">Buttons at the bottom</div><div class="b"><b>Danbooru wiki</b>, <b>Mute</b>, <b>Lock</b>, <b>Quick-fill</b> (characters only) and <b>Delete</b>. The name with ✕ stays at the top and only the middle scrolls.</div></div>
+<div class="r"><div class="a">Closing it</div><div class="b">The menu stays open while you work in it. Close it with ✕, by tapping or clicking outside, or with <kbd>Esc</kbd>.</div></div>
+</div></div>
+
+<div class="gc"><h3>🧰 Mute, Lock and Select several blocks</h3>
+<div class="rows">
+<div class="r"><div class="a"><b>Mute</b></div><div class="b">Keeps the block but leaves it out of the final prompt (faded and crossed out).</div></div>
+<div class="r"><div class="a"><b>Lock</b> 🔒</div><div class="b">Keeps the block in its place when you press Sort.</div></div>
+<div class="r"><div class="a"><b>Select</b> (above the blocks)</div><div class="b">Press it, tap or click blocks to pick them, then use the bar: <b>All</b>, <b>−</b> / <b>+</b> (weight ±0.05), <b>Weight 1</b>, <b>Mute</b>, <b>Lock</b>, <b>Move to end</b>, <b>Delete</b>, <b>Clear</b>. Press <b>Done</b> to leave.</div></div>
+<div class="r"><div class="a"><b>Quick-fill</b></div><div class="b">In a character block's menu. Adds the series plus the usual hair, eyes, breast size and outfit tags from Danbooru. Remove what you do not want.</div></div>
+</div></div>
+
+<div class="gc"><h3>🎨 Groups and sorting</h3>
+<div class="rows">
+<div class="r"><div class="a"><button type="button" tabindex="-1">Sort tags</button></div><div class="b">Orders tags: meta, background, series, count, character, hair, eyes and face, body, headwear, accessories, costume, top, bottom, underwear, legwear and shoes, pose and action, props and toys, memes, then uncategorized. Tags in the same group keep your order. Locked blocks stay where they are.</div></div>
+<div class="r"><div class="a"><button type="button" tabindex="-1">Clean up</button></div><div class="b">Fixes formatting and removes duplicates without changing the order.</div></div>
+<div class="r"><div class="a">Checkboxes</div><div class="b"><b>sort when leaving the box</b> sorts when you click away from the text box. <b>add background if missing</b> adds <code>simple background</code> and the color you pick to the final prompt only.</div></div>
+<div class="r"><div class="a"><button type="button" tabindex="-1">Reset weights</button> <button type="button" tabindex="-1">Clear</button></div><div class="b">Reset weights sets every weight back to 1. Clear removes all tags (Undo brings them back).</div></div>
+<div class="r"><div class="a">Color key</div><div class="b">Under the blocks. Shows how many blocks each group has. Click a group name to highlight its blocks, click again to turn it off.</div></div>
+<div class="r"><div class="a"><button type="button" tabindex="-1">Guess uncategorized</button></div><div class="b">Researches every gray tag on Danbooru (parent tags, wiki links, wiki text, related tags). A confident guess keeps its normal color. A <b>weak guess</b> has a dashed border, so check it. Nothing is guessed until you press this.</div></div>
+<div class="r"><div class="a">Reset buttons</div><div class="b"><b>Reset manual groups to Auto</b> undoes every group you set by hand. <b>Clear weak guesses</b> forgets only the weak guesses. Both ask first.</div></div>
+</div></div>
+
+<div class="gc"><h3>🔗 Danbooru suggestions</h3>
+<div class="rows">
+<div class="r"><div class="a">Blue suggestion box</div><div class="b">Appears under the blocks when Danbooru knows something useful. <b>Replace</b>: you typed an alias that is not a real tag, so it offers the real one and keeps your weight. <b>Add</b>: you added a character, so it offers the matching series tag.</div></div>
+<div class="r"><div class="a">Ideas after your last tag</div><div class="b">A folded line in the blue box lists tags often used with your last tag. Tap a title to open it, tap a tag to add it, tap it again to remove it.</div></div>
+<div class="r"><div class="a">Sync pill (top of the page)</div><div class="b">Says whether Danbooru is reachable. If it says <b>not synced</b>, tap it to retry. Offline, you still get a small built-in tag list.</div></div>
+</div></div>
+
+<div class="gc"><h3>📋 Output, history and saving</h3>
+<div class="rows">
+<div class="r"><div class="a">Natural language box</div><div class="b">Your sentence is added to the final prompt. <b>order</b> chooses whether tags or the sentence come first.</div></div>
+<div class="r"><div class="a">Final prompt and <b>Copy prompt</b></div><div class="b">Copies exactly the text shown. The counter shows tags and characters. <b>layout</b> chooses <b>grouped lines</b> (quality and background / count and series / character and looks / outfit / pose) or <b>one line</b>.</div></div>
+<div class="r"><div class="a"><b>copy as</b></div><div class="b">Copies a variant: with underscores, without weights, or on one line.</div></div>
+<div class="r"><div class="a"><b>History</b></div><div class="b">Restores earlier prompts. Saved a few seconds after you stop editing, and when you copy.</div></div>
+<div class="r"><div class="a"><b>Save .txt / Save .json / Load file</b></div><div class="b">Download the prompt as text, or everything (tags, sentence, negative, snippets) as a file. Load it back later or on another device.</div></div>
+<div class="r"><div class="a">Undo and Redo</div><div class="b">Buttons under the tag box (also <kbd>Ctrl</kbd> + <kbd>Z</kbd> / <kbd>Y</kbd> on a keyboard).</div></div>
+<div class="r"><div class="a">Negative prompt</div><div class="b">Its own box with its own Copy button.</div></div>
+<div class="r"><div class="a">Snippets</div><div class="b">Save the current tags under a name (an outfit, a character). Click the name later to insert them, <b>×</b> removes it.</div></div>
+<div class="r"><div class="a">Autosave</div><div class="b">Your text, snippets, mutes, locks, group choices and block size are kept in this browser.</div></div>
+<div class="r"><div class="a">Warnings</div><div class="b">Red lines under the blocks: duplicates, more than one hair or eye color, weight 0, unknown tags, and clashing pairs such as <code>short hair</code> + <code>long hair</code>, <code>1girl</code> + <code>2girls</code>, <code>barefoot</code> + <code>socks</code> or <code>sitting</code> + <code>standing</code>.</div></div>
+</div></div>
+
+<div class="gc"><h3>🖥️ Display</h3>
+<div class="rows">
+<div class="r"><div class="a">Block size <b>−</b> / <b>+</b></div><div class="b">Top right of the tag blocks. Changes how big the blocks are (70% to 180%). Remembered.</div></div>
+<div class="r"><div class="a">Button tips</div><div class="b">On a computer, hold the mouse over a button for a short explanation. Touch screens do not show these tips, so this guide is the reference.</div></div>
+<div class="r"><div class="a">Close guide</div><div class="b">The round button at the bottom folds the guide. Open it again from the 📖 title.</div></div>
+</div></div>
+
+<div class="gclose"><button type="button" id="gclose">▲ Close guide</button></div></div></details>
+
+<div class="box"><h2>Tags (separate with commas)</h2>
+<textarea id="raw" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="1girl, solo, long hair, blue eyes ..."></textarea><div id="ac"></div>
+<div class="bar" style="margin-top:8px">
+<button class="p" id="sort">Sort tags</button><button id="clean">Clean up</button>
+<button id="undo" title="Undo (Ctrl+Z)">↶ Undo</button><button id="redo" title="Redo (Ctrl+Y)">↷ Redo</button>
+<button id="rw" title="Set every weight back to 1">Reset weights</button><button id="clr" title="Remove all tags (Undo brings them back)">Clear</button>
+</div>
+<div class="bar" style="margin-top:8px">
+<label><input type="checkbox" id="autosort"> sort when leaving the box</label>
+<label><input type="checkbox" id="autobg" checked> add background if missing</label>
+<select id="bgsel"><option>gradient background</option><option>white background</option><option>pink background</option><option>blue background</option><option>purple background</option><option>grey background</option></select>
+</div></div>
+
+<div class="box"><div class="bh"><h2>Tag blocks</h2><div class="rz"><button type="button" id="selb" title="Select several blocks">Select</button><button type="button" id="rzm" title="Smaller blocks" aria-label="Smaller blocks">−</button><span id="rzv">100%</span><button type="button" id="rzp" title="Bigger blocks" aria-label="Bigger blocks">+</button></div></div><p class="hint" id="chiphint" style="margin:0 0 8px"></p>
+<div id="chips"></div><div class="leg" id="leg" title="Click a group to highlight it"></div><div class="bar" id="grpbar" style="margin-top:6px"><button id="gres" title="Set every group you chose by hand back to Auto">Reset manual groups to Auto</button><button id="gclr" title="Forget only the weak (dashed) guesses. Confident guesses stay.">Clear guesses</button><button id="ggo" title="Research grey tags and redo weak guesses. Nothing is guessed until you press this.">Guess uncategorized</button></div><div id="warn"></div><div id="conn" hidden></div></div>
+
+<div class="box"><h2>Natural language (ANIMA hybrid)</h2><textarea id="nl" style="min-height:60px" placeholder="A cheerful girl standing on a sunlit balcony ..."></textarea>
+<div class="bar" style="margin-top:8px"><label>order <select id="ord"><option value="t">tags, then sentence</option><option value="n">sentence, then tags</option></select></label></div></div>
+
+<div class="box"><div class="bar"><h2 style="margin:0">Final prompt</h2><span id="cnt"></span></div><pre id="out" style="margin-top:6px"></pre><div class="bar" style="margin-top:8px"><label>layout <select id="lay"><option value="l">grouped lines</option><option value="o">one line</option></select></label><button class="p" id="copy">Copy prompt</button></div>
+<div class="bar" style="margin-top:8px"><button id="hbtn" type="button">History</button><button id="sv1" type="button">Save .txt</button><button id="sv2" type="button">Save .json</button><button id="ldb" type="button">Load file</button><input type="file" id="ldf" accept=".txt,.json,text/plain,application/json" hidden><label>copy as <select id="cas"><option value="">choose…</option><option value="u">underscores</option><option value="w">no weights</option><option value="o">one line</option></select></label></div></div>
+
+<div class="box"><h2>Negative prompt</h2><textarea id="neg" style="min-height:60px"></textarea><div class="bar" style="margin-top:8px"><button id="copyn">Copy negative</button></div></div>
+
+<div class="box"><h2>Snippets and backup</h2><div class="bar"><input type="text" id="sname" placeholder="name"><button id="ssave">Save current tags</button></div><div class="bar" id="snips" style="margin-top:8px"></div>
+<div class="bar" style="margin-top:10px"><button id="bk">Copy backup</button><button id="rs">Restore backup</button><span class="hint">Backup moves your boxes and snippets to another browser or device.</span></div></div>
+</main>
+<div id="dock"><button id="undo2">↶ Undo</button><button class="p" id="copy2">Copy prompt</button></div>
+<div id="back"></div><div id="menu"></div>
+<script>
+const $=s=>document.querySelector(s),raw=$('#raw'),ac=$('#ac'),ch=$('#chips'),menu=$('#menu'),back=$('#back');
+const coarse=()=>matchMedia('(pointer:coarse)').matches,sheet=()=>coarse()||matchMedia('(max-width:700px)').matches;
+const fmt=w=>String(+(+w).toFixed(2));
+const GN=['meta / quality','background','series','count','character','hair','eyes / face','headwear','accessories','top','bottom','underwear','legwear / shoes','pose / action','body','costume / cosplay','props / objects / toys','uncategorized','meme / reference'];
+const ORD=[0,1,2,3,4,5,6,14,7,8,15,9,10,11,12,13,16,18],HUE=g=>{const r=ORD.indexOf(g);return r<0?0:(200+r*21)%360},LT=g=>ORD.indexOf(g)%2?'50%':'68%';
+const RK=g=>g===14?6.5:g===15?8.5:g===16?13.5:g===17?99:g===18?13.8:g;
+const LINES=[[0,1],[2,3],[4,5,6,14],[7,8,9,10,11,12,15],[13,16,18,17]];
+const META=/^(masterpiece|best quality|highres|absurdres|newest|recent|safe|sensitive|nsfw|explicit|year \d+|score \d.*|source .*|.*commentary.*|translated|translation request|bad (pixiv )?id|artist name|signature|twitter username|character name|copyright name|english text|commission|official art|dated|watermark|web address|.*\(medium\)|blurry|greyscale|monochrome|comic|chibi|multiple views|virtual youtuber|cover|cover page|turnaround|reference sheet|lineart|spot color|sepia|sketch|4koma|2koma|1koma|character profile|collage|flat color|anime coloring|limited palette|muted color|pale color|high contrast|retro artstyle|pixel art|manga|traditional media|photorealistic|realistic|3d|.*censor.*|decensored)$/;
+const RULES=[[18,/\(meme\)$|\bmemes?\b/],[13,/\bsex\b/],[6,/^(tsundere|yandere|kuudere|dandere|deredere|himedere|mixed signals)$/],[13,/bdsm|femdom|humiliation|sadism|masochism|spanking|whipping|strangling|stepped on|ryona|mind break|^pain$|struggling/],[1,/valentine|new year|birthday|hanami|tanabata|halloween|christmas/],[16,/^(gift|present|trophy|banner|signboard|trash can|bicycle|car|motorcycle|bus|boat|airplane|robot|mecha)$|\bvehicle\b/],[16,/butt ?plug|anal (plug|beads)|dildo|vibrator|sex toy|bondage|\brope\b|shibari|handcuffs|\bgag\b|\bwhip\b|\bleash\b|blindfold|riding crop|strap-on|cock ring|nipple clamps|restrained|\bbound\b|pacifier|\bcandle\b|tail plug|\btoy\b/],[3,/^(\d+\+?(girls?|boys?|others?)|solo|multiple (girls|boys|others)|no humans|solo focus|male focus|hetero|yuri|yaoi|bisexual (female|male)|couple)$/],
+[14,/clitoral hood|clitoral|knee ?cap|pointy ears|elf ears|human ears/],
+[13,/^covering /],
+[5,/crown braid|hair (over|between|behind|intakes|flaps)|blunt ends|(one|two) side up|half updo|sidecut|\bhair (down|up)\b|ponytails?|twin drills/],
+[7,/ear fluff|forehead protector|headpiece|hair (ornament|ribbon|bow|flower|band|tie|scrunchie|stick|pin|net)|hairclip|hairband|hairpin|\bhat\b|headband|headwear|headphones|crown|tiara|veil|bonnet|beret|\bhood\b|\bcap\b|\bears\b|horns|halo|headdress/],
+[13,/^(sex|vaginal|anal|oral|fellatio|cunnilingus|paizuri|handjob|footjob|masturbation|fingering|clothed sex|group sex|threesome|after (sex|anal|vaginal|fellatio)|missionary|doggystyle|cowgirl position|reverse cowgirl position|girl on top|standing sex|mating press|prone bone|cum\b|facial$|bukkake|orgasm|ahegao|ejaculation|female ejaculation|squirting|cumshot|creampie)/],
+[14,/censor|penis|testicles|erection|foreskin|precum|veiny|\banus\b|bare (legs|arms|back|feet)|skindentation|nipple|cleavage|collarbone|sideboob|underboob|midriff|thigh gap|wide hips|breasts|flat chest|\bass\b|navel|thighs|\babs\b|muscular|\bskin\b|tanlines|\btan\b|hips|waist|nipples|areolae|pussy|penis|anus|armpits?|stomach|belly|tattoo|freckles|\bmole\b|\bscar\b|curvy|slender|skinny|plump|petite|mature|milf|vulva|clitoris|cleft of venus|cameltoe|\bmons\b|labia|vagina|uterus|womb|\bcrotch\b|groin|pubic|\bbreasts?\b(?! pocket)|boob|areola|bodypaint|body hair|\bflashing\b|shaft look|^(feet|foot|toes?|soles?|toenails?|ankles?|calves|kneepits|nape|fur|foot focus)$/],
+[15,/cosplay|costume|bunnysuit|playboy bunny|bunny girl|race queen|cheerleader|magical girl|kigurumi|santa|\bmiko\b|\bnurse\b|police|pirate|waitress|idol|tangzhuang|harem|hanfu|geisha|ninja|\bnun\b|witch|vampire|dancer|samurai|heian|junihitoe|shrine maiden|gothic lolita|lolita fashion/],
+[5,/\bhair\b|ponytail|twintails|braid|bangs|ahoge|sidelocks|\bbun\b|drill|bob cut|hime cut|ponytails?|ringlets|pigtails|sidecut|undercut|mohawk|pompadour|bowl cut|afro|dreadlocks|hairstyle|\bfringe\b/],
+[11,/panties|\bbra\b|underwear|lingerie|thong|garter|camisole|bikini bottom|\bnude\b|topless|briefs|boxers|fundoshi|jockstrap|g-string|negligee|babydoll|chemise|bustier|corset|pasties|maebari|bottomless|sarashi|loincloth|sarong|chest wrap|chest binder/],
+[12,/fishnets$|fishnet (legwear|pantyhose|thighhighs)|thighhighs|pantyhose|socks|stockings|legwear|kneehighs|shoes|boots|sandals|barefoot|heels|loafers|sneakers|leggings|zettai|\btabi\b|\bgeta\b|zouri|zori|waraji|split-toe/],
+[10,/skirt|shorts|pants|jeans|bloomers|hakama|pleated/],
+[13,/^hands? (on|in|over) /],
+[9,/pockets?\b|frills|\bclothes\b|clothing|off shoulder|bare shoulder\b|shirt|blouse|jacket|sweater|hoodie|\btop\b|dress|kimono|yukata|coat|vest|cardigan|uniform|serafuku|tank|cleavage|shoulders|sleeve|apron|swimsuit|bikini|leotard|bodysuit|armor|maid|collarbone|tunic|poncho|romper|overalls|jumpsuit|bathrobe|\brobe\b|pajamas|nightgown|sleepwear|tracksuit|sportswear|labcoat|cloak|suspenders|sweatshirt|tube top|bandeau|halter|strapless|backless|outfit|cutout|capelet|vest|swimwear|swim trunks|jammers|happi|haori|dougi/],
+[8,/fingernails|nail polish|\bnails\b|scrunchie|\bobi\b|\bsash\b|anklet|pendant|badge|necklace|earrings|choker|bracelet|\bring\b|glasses|ribbon|\bbow\b|scarf|gloves|\bbelt\b|\bbag\b|watch|jewelry|collar\b|bowtie|necktie|armband|\bcape\b|\bmask\b|piercing|wings|\btail\b|bandages?|bandaid|bandana|eyepatch|\bpins?\b|\bbells?\b|\bchains?\b|jewel|\bgems?\b|brooch|bangle|\bcuffs\b|harness|tassel|charm|keychain|amulet|talisman|emblem|earphones|headset|earbuds|neck ribbon|neck bell/],
+[6,/grin|smirk|pout|frown|byakugan|sharingan|nervous|calm|serious|\bshy\b|smug|annoyed|angry|surprised|crying|laughing|tired|sleepy|drool|\beyes?\b|eyebrows|eyelashes|pupils|blush|smile|mouth|tongue|fang|teeth|expression|^[:;]|lips|nose|cheek|tears|looking|frown|embarrassed|heart-shaped|moaning|torogao|fucked silly|trembling|stifled laugh|giggling|whimper|gasping|\bsigh\b|yawning|sweat|makeup|lipstick|eyeshadow|eyeliner|mascara|glaring|\bwink|panting|heavy breathing|rolling eyes|naughty face|seductive|\bsad\b|\bhappy\b|laughing|scream|shouting|determined|worried|scared|disgust|confused|dazed|facial mark|mole under|jitome|tsurime|tareme|sanpaku/],
+[1,/bathroom|balcony|library|rooftop|kitchen|living room|steam|\brain\b|\bsnow\b|\bfog\b|mountain|\briver\b|\blake\b|\bpool\b|school|office|\btrain\b|\bcafe\b|\bshop\b|stairs|corridor|\bhallway\b|\bhotel\b|hot spring|onsen|background|indoors|outdoors|\bsky\b|\broom\b|bedroom|forest|beach|\bcity\b|street|garden|classroom|\bnight\b|sunset|\bocean\b|\bwindow\b|\bclouds?\b|gradient|\bday\b|sunlight|depth of field|bokeh|\btrees?\b|\bgrass\b|\bmoon\b|\bsun\b|starry|\bstars?\b|rainbow|storm|lightning|petals|\bleaves\b|autumn|winter|summer|spring|christmas|halloween|festival|temple|shrine|castle|ruins|cityscape|skyline|\bbridge\b|\broad\b|moonlight|horizon|\bwaves?\b|\bsea\b|\bice\b|\bsand\b|\bcave\b|\bspace\b|fireworks|\bstage\b|restaurant|lobby|bathtub|^(evening|morning|dusk|dawn|sunrise|twilight|wall|floor|ceiling|door|desk|bench|fence|field|scenery|landscape)$/],
+[16,/^(?!holding|reading|hugging|eating|drinking|using|carrying|lying|sitting|kneeling|standing|leaning|sleeping)(?=.*\b(towels?|books?|heart|sparkle|speech bubble|sweatdrop|flower|rose|lily|tulip|daisy|sunflower|sword|weapon|water|musical note|star \(symbol\)|phone|smartphone|cup|mug|umbrella|bottle|food|egg|water drops?|bubbles?|petals|sparkles|confetti|camera|microphone|balloon|candy|plate|bowl|pillow|blanket|couch|sofa|chair|bed|table|guitar|piano|violin|drums?|instrument|controller|laptop|computer|tablet|cigarette|lantern|lamp|flag|mirror|key|coin|card|letter|ball|doll|plush|stuffed toy|teddy bear|towel|soap|brush|scissors|pen|pencil|paper|notebook|bucket|basket|box|cage|chain|food|fruit|strawberry|apple|cake|candy|lollipop|ice cream|pizza|burger|bread|chocolate|cookie|tea|coffee|milk|sushi|onigiri|gun|rifle|katana|staff|spear|knife|dagger|axe|shield|scythe|wand|arrow|bird|cat|dog|rabbit|fish|butterfly)s?\b)/],
+[13,/\bknees?\b|\bon ground|wind lift|feet apart|head tilt|all fours|seiza|standing|sitting|lying|kneeling|squatting|crouching|walking|running|jumping|leaning|bending|stretching|\barms?\b|\bhands?\b|\bfingers?\b|\blegs?\b|spread|crossed|holding|hug|kiss|pose|\bon (back|side|stomach|bed|floor|couch|chair)|from (above|behind|side|below)|dutch angle|close-up|portrait|upper body|full body|cowboy shot|\bpov\b|peace sign|waving|\bv\b|sleeping|eating|drinking|singing|dancing|reading|fighting|selfie|focus|presenting|straddling|fellatio|\bsex\b|\bcum\b|masturbation|grabbing|pulling|touching|licking|biting|carrying|cuddling|beckon|come hither|teasing|climbing|reclining|lotus position|royal ease|\bon (bench|railing|wall|fence|rock|rocks|table|desk|bed|floor|ground|stairs|steps|roof|bike|horse|ledge)\b|against|railing|leaning on|hand on (wall|railing|glass)|wink|yawning|bent over|arched back|twisted torso|contrapposto|flying|falling|swimming|diving|riding|shooting|cooking|studying|writing|playing|exercising|\bsplits\b|head (tilt|rest|back)|facing|profile|looking|lower body|out of frame|straight-on|upside-down|lap pillow|headpat|piggyback|spoken|pointing|reaching|salute|gesture/],
+[9,/gown|overcoat|raincoat|parka|jersey|kneepads|elbow pads|smock|tabard|chaps|\bgi\b/],
+[8,/lanyard|name tag|id card|whistle|stethoscope|medal|epaulettes|cufflinks|monocle|sunglasses|goggles|rosary|armlet|wristband/],
+[16,/sword|katana|\bgun\b|pistol|spear|knife|dagger|\baxe\b|scythe|bottle|\bcup\b|\bmug\b|chopsticks|spoon|\bfork\b|\bcake\b|\bbook\b|camera|\bpen\b|mirror|plushie|balloon|\bkey\b|\bcoin\b|\bcard\b|bouquet|cigarette|\bpipe\b|alcohol|\bbeer\b|\bwine\b|\bsake\b|coffee|juice|bread|noodles|ramen|pizza|burger|sushi|cookie|chocolate|popcorn|snack/],
+[1,/aurora|galaxy|nebula|planet|jungle|desert|volcano|waterfall|pond|\bgym\b|arena|subway|airport|harbor|market|store|church|cathedral|mansion|palace|dungeon|laboratory|hospital|locker room|infirmary/],
+[13,/motion lines|crawling|bathing|showering|swimming|waking|brushing|undressing|lifting|peeking|hiding|sneaking|bowing|praying|clapping|punching|kicking|floating/]];
+const LOCAL=`1girl,2girls,3girls,1boy,2boys,solo,multiple girls,no humans,long hair,short hair,medium hair,very long hair,blonde hair,black hair,brown hair,blue hair,pink hair,white hair,silver hair,red hair,green hair,purple hair,grey hair,orange hair,twintails,ponytail,braid,side ponytail,low twintails,bangs,blunt bangs,ahoge,hair between eyes,sidelocks,messy hair,wavy hair,straight hair,blue eyes,red eyes,green eyes,brown eyes,purple eyes,yellow eyes,golden eyes,pink eyes,aqua eyes,heterochromia,looking at viewer,looking away,looking back,smile,open mouth,closed mouth,blush,:d,:3,;d,tongue out,fang,teeth,tears,half-closed eyes,closed eyes,expressionless,frown,embarrassed,hair ribbon,hair bow,hair ornament,hairclip,hairband,hat,headband,animal ears,cat ears,fox ears,horns,halo,crown,flower,necklace,earrings,choker,bracelet,glasses,ribbon,bow,scarf,gloves,jewelry,bowtie,belt,school uniform,serafuku,shirt,white shirt,t-shirt,blouse,jacket,sweater,hoodie,dress,white dress,sundress,kimono,yukata,off shoulder,bare shoulders,cleavage,collarbone,long sleeves,short sleeves,sleeveless,crop top,tank top,bikini,swimsuit,one-piece swimsuit,leotard,apron,maid,skirt,pleated skirt,miniskirt,shorts,short shorts,pants,jeans,panties,bra,underwear,lingerie,white panties,thighhighs,pantyhose,socks,kneehighs,stockings,barefoot,shoes,boots,sandals,sneakers,zettai ryouiki,standing,sitting,lying,on back,on side,kneeling,squatting,walking,running,arms up,arms behind back,hand on own hip,hands on own face,peace sign,v,waving,holding,holding food,holding phone,holding cup,holding flower,from side,from behind,from above,from below,cowboy shot,upper body,full body,portrait,close-up,dutch angle,simple background,white background,gradient background,indoors,outdoors,sky,cloud,blue sky,night,sunset,beach,ocean,forest,city,street,classroom,bedroom,window,day,sunlight,depth of field,bokeh,highres,absurdres,newest,safe,sensitive,nsfw,explicit`.split(',');
+const PAIRS=[['1girl','2girls'],['solo','multiple girls'],['solo','2girls'],['short hair','long hair'],['open mouth','closed mouth'],['standing','sitting'],['looking at viewer','looking away'],['no bra','bra'],['no panties','panties'],['barefoot','socks'],['barefoot','shoes'],['closed eyes','looking at viewer'],['sitting','lying'],['standing','kneeling'],['simple background','indoors'],['simple background','outdoors'],['upper body','full body'],['smile','frown']];
+const API='https://danbooru.donmai.us/';
+
+/* variants: colors and families (length, style ...) */
+const COLORS=['black','white','red','blue','green','yellow','pink','purple','orange','brown','grey','silver','aqua','blonde','beige','light blue','dark blue','light brown','dark brown','light green','light purple','light pink','multicolored'];
+const SW={black:'#222',white:'#f4f4f4',red:'#e53935',blue:'#1e88e5',green:'#43a047',yellow:'#fdd835',pink:'#f48fb1',purple:'#8e24aa',orange:'#fb8c00',brown:'#795548',grey:'#9e9e9e',silver:'#cfd8dc',aqua:'#26c6da',blonde:'#f9d56e',beige:'#e8d8b9','light blue':'#81d4fa','dark blue':'#0d47a1','light brown':'#a1887f','dark brown':'#4e342e','light green':'#a5d6a7','light purple':'#ce93d8','light pink':'#f8bbd0',multicolored:'linear-gradient(135deg,#e53935,#fdd835,#43a047,#1e88e5)'};
+const CRE=new RegExp('^('+COLORS.slice().sort((a,b)=>b.length-a.length).join('|')+') (.+)$');
+const NOUN=/(bikini top|bikini bottom|sailor collar|neckerchief|capelet|turtleneck|camisole|umbrella|rose|flower|ascot|headwear|footwear|legwear|bandeau|poncho|shirt|skirt|dress|jacket|sweater|hoodie|coat|vest|cardigan|ribbon|bow|bowtie|necktie|scarf|gloves|panties|bra|bikini|swimsuit|leotard|bodysuit|apron|shorts|pants|jeans|thighhighs|pantyhose|socks|kneehighs|stockings|boots|shoes|sneakers|sandals|hat|beret|headband|hairband|choker|necklace|kimono|yukata|serafuku|camisole|cape|belt|bag|nails|collar|bracelet|earrings|hairclip|blouse|tank top|crop top|t-shirt|uniform|lingerie|raincoat|cloak|mask|eyeshadow|lipstick|sleeves|thong|leggings|capelet|robe|jumpsuit|overalls|corset|babydoll|negligee|gauntlets|armband|wristband|eyepatch|sash|heels|loafers|ears|wings|horns|scrunchie|gag|leash|blindfold|handcuffs|rope|fishnets|vibrator|dildo|butt plug)$/;
+const FAM=[
+{l:'Hair length',m:['very short hair','short hair','medium hair','long hair','very long hair','absurdly long hair'],o:t=>/\bhair$/.test(t)&&!/(pubic|armpit|chest|leg|arm|body|facial|navel|stray) hair$/.test(t),set:1},
+{l:'Hairstyle',m:['ponytail','high ponytail','low ponytail','side ponytail','twintails','low twintails','twin braids','single braid','braid','hair bun','double bun','half updo']},
+{l:'Bangs',m:['bangs','blunt bangs','swept bangs','parted bangs','asymmetrical bangs']},
+{l:'Hair texture',m:['straight hair','wavy hair','curly hair','messy hair']},
+{l:'Sleeves',m:['sleeveless','short sleeves','long sleeves','puffy short sleeves','puffy long sleeves'],o:t=>/(shirt|blouse|dress|jacket|sweater|hoodie|uniform|serafuku|cardigan|top)$/.test(t),set:1},
+{l:'Skirt length',m:['microskirt','miniskirt','skirt','long skirt'],o:t=>/skirt$/.test(t),cp:1,set:1,nt:'skirt'},
+{l:'Dress length',m:['short dress','dress','long dress'],o:t=>/dress$/.test(t),set:1,nt:'dress'},
+{l:'Legwear length',m:['ankle socks','socks','kneehighs','thighhighs'],o:t=>/(socks|kneehighs|thighhighs)$/.test(t),cp:1},
+{l:'Smile',m:['light smile','smile','smirk','grin','evil smile']},
+{l:'Eyes',m:['half-closed eyes','closed eyes','narrowed eyes','wide-eyed']},
+{l:'Looking',m:['looking at viewer','looking away','looking back','looking up','looking down','looking to the side']},
+{l:'Framing',m:['close-up','portrait','upper body','cowboy shot','full body']},
+{l:'Angle',m:['from above','from below','from side','from behind']},
+{l:'Breast size',m:['flat chest','small breasts','medium breasts','large breasts','huge breasts','gigantic breasts']},{l:'Hair pattern',m:['two-tone hair','multicolored hair','gradient hair','streaked hair','colored inner hair','colored tips']},{l:'Ears',m:['cat ears','fox ears','dog ears','rabbit ears','wolf ears','mouse ears','horse ears','animal ears','pointy ears']},{l:'Tail',m:['cat tail','fox tail','dog tail','wolf tail','rabbit tail','horse tail','demon tail','dragon tail']},{l:'Hair accessory',m:['hair ribbon','hair bow','hairclip','hair flower','hair ornament','hairband','scrunchie','hair tie']},{l:'Neckwear',m:['necktie','bowtie','neck ribbon','choker','scarf','ascot','cravat'],cp:1},{l:'Gloves',m:['gloves','fingerless gloves','elbow gloves','mittens'],cp:1},{l:'Swimsuit',m:['bikini','micro bikini','string bikini','sling bikini','one-piece swimsuit','school swimsuit','competition swimsuit'],cp:1},{l:'Panties',m:['panties','thong','string panties','lace panties','side-tie panties','frilled panties'],cp:1},{l:'Bra',m:['bra','sports bra','strapless bra','lace bra'],cp:1},{l:'Pantyhose',m:['pantyhose','fishnet pantyhose','thighband pantyhose','fishnets','torn pantyhose'],cp:1},{l:'Shoes',m:['shoes','high heels','boots','knee boots','thigh boots','ankle boots','sandals','loafers','mary janes','sneakers'],cp:1},{l:'Shorts / pants',m:['short shorts','shorts','bike shorts','denim shorts','pants','jeans','leggings'],cp:1},{l:'Sleeve style',m:['detached sleeves','wide sleeves','bell sleeves','juliet sleeves','sleeves past wrists','sleeves past fingers','sleeves rolled up']},{l:'Neckline',m:['off shoulder','bare shoulders','collarbone','cleavage','turtleneck','halterneck','v-neck']},{l:'Mouth',m:['open mouth',':d',':o',':3',';d','closed mouth','parted lips','pout','tongue out']},{l:'Expression',m:['expressionless','embarrassed','angry','crying','sad','serious','surprised','smug','sleepy']},{l:'Eye style',m:['tsurime','tareme','jitome','sanpaku','slit pupils','heart-shaped pupils','sparkling eyes','empty eyes','glowing eyes']},{l:'Skin',m:['pale skin','dark skin','tan','tanlines','shiny skin','sweaty']},{l:'Build',m:['skinny','slender','curvy','plump','muscular female','toned','thick thighs','wide hips','narrow waist']},{l:'Posture',m:['standing','sitting','kneeling','squatting','lying','on back','on side','on stomach','seiza','wariza','all fours','crossed legs','leaning forward','straddling']},{l:'Hands',m:['peace sign','double v','waving','salute','hand on own hip','hands on own hips','hand on own chest','hand on own face','arms up','arms behind back','arms behind head']},{l:'Time',m:['day','night','sunset','evening','dusk','sunrise','morning']},{l:'Lighting',m:['sunlight','backlighting','rim light','dramatic lighting','soft lighting','moonlight','light rays','lens flare']},{l:'Background',m:['simple background','white background','gradient background','grey background','transparent background','two-tone background','blurry background','abstract background']}];
+
+const cache=new Map(),pc=new Map(),tried=new Set(),unk=new Set();
+let tags=[],live=null,lastSig=null,ht,drag=null,mi=-1,mx=0,my=0,mtok=0,lastPT='mouse',dragEnd=0;
+const catOf=t=>cache.has(t)?cache.get(t):(META.test(t)?5:0);
+const wiki=t=>window.open(API+'wiki_pages/'+encodeURIComponent(t.replace(/ /g,'_')),'_blank','noopener');
+/* connections: alias fixes, series links, related tags */
+const ali=new Map(),imp=new Map(),busy=new Set();let relT='';
+const US=t=>t.replace(/ /g,'_'),kao=t=>t.includes('_')&&t.length<=12&&!/\s/.test(t)&&!/[a-z]{2}/i.test(t),SP=t=>{const u=t.trim();return kao(u)?u:t.replace(/_/g,' ')},
+ fixUS=v=>v.split(',').map(g=>kao(g.trim().replace(/^\(+/,'').replace(/(:[-\d.]+)?\)+$/,''))?g:g.replace(/_/g,' ')).join(',');
+async function jget(u){const r=await fetch(API+u);if(!r.ok)throw 0;return r.json()}
+function addTag(n){if(tags.some(x=>x.t===n))return;tags.push({t:n,w:1});raw.value=ser(tags);render()}
+function swapTag(a,b){const i=tags.findIndex(y=>y.t===a);if(i<0)return;if(tags.some(y=>y.t===b))tags.splice(i,1);else tags[i].t=b;unk.delete(a);raw.value=ser(tags);render()}
+function conn(){drawConn();lookup();sugLast()}
+async function lookup(){if(live===false)return;
+ for(const t of tags.map(x=>x.t)){
+  if(unk.has(t)&&!ali.has(t)&&!busy.has('a'+t)){busy.add('a'+t);
+   try{const j=await jget('tag_aliases.json?limit=1&search[status]=active&search[antecedent_name]='+encodeURIComponent(US(t)));ali.set(t,j[0]?SP(j[0].consequent_name):'')}catch(e){ali.set(t,'')}drawConn()}
+  if(cache.get(t)===4&&!imp.has(t)&&!busy.has('i'+t)){busy.add('i'+t);
+   try{const j=await jget('tag_implications.json?limit=10&search[status]=active&search[antecedent_name]='+encodeURIComponent(US(t))),names=j.map(o=>SP(o.consequent_name));
+    if(names.length){const m=await jget('tags.json?limit=100&only=name,category&search[name_comma]='+encodeURIComponent(names.map(US).join(',')));m.forEach(o=>cache.set(SP(o.name),o.category))}
+    imp.set(t,names.filter(n=>cache.get(n)===3))}catch(e){imp.set(t,[])}drawConn()}}}
+function sugLast(){const t=tags.length?tags[tags.length-1].t:'';if(!t){lastSug={t:'',list:[],open:lastSug.open};return}
+ if(t===lastSug.t||live===false)return;lastSug={t,list:[],open:lastSug.open};clearTimeout(sgt);
+ sgt=setTimeout(async()=>{try{const l=(await relFor(t,'general')).map(o=>o.n).slice(0,30);await verify(l);if(lastSug.t!==t)return;lastSug.list=l.filter(okName);drawConn()}catch(e){}},700)}
+function drawConn(){const box=$('#conn'),have=new Set(tags.map(x=>x.t)),rows=[];
+ tags.forEach(x=>{const a=ali.get(x.t);if(unk.has(x.t)&&a&&a!==x.t)rows.push([x.t+' → '+a,'Replace',()=>swapTag(x.t,a)]);
+  (imp.get(x.t)||[]).filter(n=>!have.has(n)).forEach(n=>rows.push(['Series: '+n+' (for '+x.t+')','+ Add',()=>addTag(n)]))});
+ const last=tags.length?tags[tags.length-1].t:'',ideas=lastSug.t===last?lastSug.list.filter(n=>!have.has(n)).slice(0,10):[];
+ box.innerHTML='';box.hidden=!rows.length&&!ideas.length;if(box.hidden)return;
+ if(rows.length){const h=document.createElement('div');h.className='cth';h.textContent='Suggestions from Danbooru';box.append(h);
+  rows.slice(0,6).forEach(([l,b,f])=>{const d=document.createElement('div');d.className='cnr';const s=document.createElement('span');s.textContent=l;const k=document.createElement('button');k.type='button';k.textContent=b;k.onclick=f;d.append(s,k);box.append(d)})}
+ if(ideas.length){const lab=()=>(lastSug.open?'▾ ':'▸ ')+'Ideas after “'+last+'” ('+ideas.length+')',h=document.createElement('div'),lb=document.createElement('span'),body=document.createElement('div');
+  h.className='cnr';lb.style.cssText='cursor:pointer;color:var(--ac);font-weight:600';lb.textContent=lab();body.className='opts';body.hidden=!lastSug.open;
+  lb.onclick=()=>{lastSug.open=!lastSug.open;body.hidden=!lastSug.open;lb.textContent=lab()};
+  ideas.forEach(n=>body.append(chipBtn(n,false,()=>addTag(n),()=>remTag(n))));h.append(lb);box.append(h,body)}}
+const rel=document.createElement('div');rel.id='rel';rel.hidden=true;document.body.append(rel);
+/* Danbooru wiki "See also" + Related tags, cached for a week */
+const AC='ape-api',TTL=6048e5;let apiC={};try{apiC=JSON.parse(localStorage.getItem(AC)||'{}')}catch(e){}
+function cget(k){const v=apiC[k];return v&&Date.now()-v.t<TTL?v.v:null}
+function cset(k,v){apiC[k]={t:Date.now(),v};const ks=Object.keys(apiC);if(ks.length>300)ks.sort((a,b)=>apiC[a].t-apiC[b].t).slice(0,60).forEach(x=>delete apiC[x]);try{localStorage.setItem(AC,JSON.stringify(apiC))}catch(e){}}
+async function seeAlso(t){const k='w|'+t,c=cget(k);if(c)return c;
+ const r=await fetch(API+'wiki_pages/'+encodeURIComponent(US(t))+'.json');let body='';
+ if(r.ok)body=(await r.json()).body||'';else if(r.status!==404)throw 0;
+ const see=[],men=[];let inSee=false;
+ body.split(/\r?\n/).forEach(l=>{const h=l.match(/^h[1-6]\.\s*(.*)$/i);if(h)inSee=/see also/i.test(h[1]);
+  const L=/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]/g;let m;
+  while((m=L.exec(l))){const n=SP(m[1]).trim().toLowerCase();if(!n||n.includes(':')||n===t)continue;(inSee?see:men).push(n)}});
+ const v={see:[...new Set(see)],men:[...new Set(men)].filter(n=>!see.includes(n))};cset(k,v);return v}
+async function relFor(t,cat){const k='r|'+t+'|'+cat,c=cget(k);if(c)return c;
+ const j=await jget('related_tag.json?query='+encodeURIComponent(US(t))+(cat?'&category='+cat:''));
+ const list=(j.related_tags||j.tags||(Array.isArray(j)?j:[])).map(o=>Array.isArray(o)?{n:o[0]}:{n:(o.tag&&o.tag.name)||o.name,c:o.tag&&o.tag.category}).filter(o=>typeof o.n==='string').map(o=>({n:SP(o.n),c:o.c})).filter(o=>o.n!==t).slice(0,40);
+ cset(k,list);return list}
+const kfmt=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?Math.round(n/1e3)+'k':String(n);
+function remTag(n){const j=tags.findIndex(y=>y.t===n);if(j<0)return;tags.splice(j,1);raw.value=ser(tags);render()}
+function chipBtn(nm,have,fn,rm){const c=pc.get(nm),k=cache.get(nm),b=document.createElement('button');b.type='button';b.className='opt'+(have?' on':'');
+ const sp=document.createElement('span');if(k)sp.className='c'+k;sp.textContent=nm;b.append(sp);
+ if(c){const sm=document.createElement('small');sm.textContent=kfmt(c);b.append(sm);b.title=nm+' · '+c.toLocaleString()+' posts'}else b.title=nm;
+ if(have&&rm)b.title+=' · click again to remove';
+ b.onclick=()=>{if(b.classList.contains('on')){if(!rm)return;if(rm()===false)return;b.classList.remove('on');b.title=b.title.replace(' · click again to remove','');return}fn();b.classList.add('on');if(rm&&!b.title.includes('click again'))b.title+=' · click again to remove'};return b}
+const okName=nm=>{const c=pc.get(nm),k=cache.get(nm);return !(c===0||k===1||k===5)};
+function addDyn(t,tok){menu._os=null;
+ [['See also',async()=>{const v=await seeAlso(t);return[...v.see,...v.men].slice(0,30)}],
+  ['Related',async()=>(await relFor(t,'')).filter(o=>o.c!==1&&o.c!==5).map(o=>o.n).slice(0,20)]].forEach(([lab,get])=>{
+  const [w,h]=mrow(lab),lb=w.firstChild;let loaded=false,cnt=0,st=live===true?'ok':live===false?'bad':'';
+  w.classList.add('fold');h.hidden=true;lb.setAttribute('role','button');lb.tabIndex=0;lb.setAttribute('aria-expanded','false');menu.append(w);
+  const paint=()=>{lb.textContent=(h.hidden?'▸ ':'▾ ')+lab+(cnt?' ('+cnt+')':'');lb.setAttribute('aria-expanded',String(!h.hidden));lb.dataset.s=st};paint();
+  const load=()=>{loaded=true;h.classList.add('dim');h.textContent='Loading…';
+   get().then(async names=>{if(tok!==mtok)return;await verify(names);if(tok!==mtok||menu.style.display!=='block')return;
+    const have=new Set(tags.map(y=>y.t));h.classList.remove('dim');h.textContent='';
+    names.filter(okName).forEach(nm=>{h.append(chipBtn(nm,have.has(nm),()=>{const j=tags.findIndex(y=>y.t===t);if(j<0||tags.some(y=>y.t===nm))return;tags.splice(j+1,0,{t:nm,w:1});raw.value=ser(tags);commit(false)},()=>{if(nm===t)return false;remTag(nm);menu._reidx&&menu._reidx()}));cnt++});
+    st='ok';if(!cnt)h.textContent='Nothing found';paint();place()}).catch(()=>{if(tok!==mtok)return;st='bad';paint();h.classList.remove('dim');h.textContent='Could not load from Danbooru';place()})};
+  lb.onclick=()=>{h.hidden=!h.hidden;paint();if(!h.hidden&&!loaded)load();place()};
+  lb.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();lb.click()}};
+  if(lab==='See also'){menu._os=()=>{if(h.hidden){h.hidden=false;paint();if(!loaded)load();place()}};if(!variantRows(t).length)menu._os()}})}
+async function showRel(t,cat='see'){relT=t;rel.hidden=false;rel.innerHTML='';
+ const hd=document.createElement('div');hd.className='rlh';const b=document.createElement('b');b.textContent='Related to '+t;const x=document.createElement('button');x.type='button';x.textContent='✕';x.onclick=()=>{rel.hidden=true};hd.append(b,x);
+ const tb=document.createElement('div');tb.className='rlt';[['see','See also'],['','Related'],['general','Tags'],['character','Characters'],['copyright','Series']].forEach(([c,l])=>{const k=document.createElement('button');k.type='button';k.textContent=l;if(c===cat)k.className='on';k.onclick=()=>showRel(t,c);tb.append(k)});
+ const body=document.createElement('div');body.className='rlb';body.textContent='Loading…';rel.append(hd,tb,body);
+ try{let list;if(cat==='see'){const v=await seeAlso(t);list=[...v.see,...v.men].map(n=>({n}));if(!list.length)return showRel(t,'')}else list=await relFor(t,cat);
+  if(relT!==t||rel.hidden)return;await verify(list.map(o=>o.n));if(relT!==t||rel.hidden)return;
+  const have=new Set(tags.map(y=>y.t));body.textContent='';let n=0;
+  list.map(o=>o.n).filter(okName).forEach(nm=>{body.append(chipBtn(nm,have.has(nm),()=>{have.add(nm);addTag(nm)},()=>{have.delete(nm);remTag(nm)}));n++});
+  if(!n)body.textContent='Nothing found.'
+ }catch(e){body.textContent='Could not reach Danbooru. Open the saved .html file from your computer (not the Claude preview).'}}
+addEventListener('keydown',e=>{if(e.key==='Escape')rel.hidden=true});
+$('#gclose').onclick=()=>{const g=$('#guide');g.open=false;g.scrollIntoView({behavior:'smooth',block:'start'})};
+/* v7 features: lock, mute, select, history, files, quick-fill */
+const muted=new Set(),locked=new Set(),pick=new Set();let selMode=false,lastSug={t:'',list:[],open:false},sgt,hrt;
+try{const d=JSON.parse(localStorage.getItem('ape')||'{}');(d.m||[]).forEach(x=>muted.add(x));(d.k||[]).forEach(x=>locked.add(x))}catch(e){}
+function sortTags(a){const fr=a.filter(x=>!locked.has(x.t)).map((x,i)=>[x,i]).sort((p,q)=>RK(grp(p[0].t))-RK(grp(q[0].t))||p[1]-q[1]).map(p=>p[0]);let f=0;return a.map(x=>locked.has(x.t)?x:fr[f++])}
+const flip=(set,n)=>{set.has(n)?set.delete(n):set.add(n);save();render()};
+let pmin=false;function pill(c,l,s){const e=$('#sync');e.className=(c+(pmin?' min':'')).trim();e.innerHTML='<span class="l"></span><span class="s"></span>';e.firstChild.textContent=l;e.lastChild.textContent=s}
+addEventListener('scroll',()=>{const m=scrollY>50;if(m===pmin)return;pmin=m;$('#sync').classList.toggle('min',m)},{passive:true});
+function extraFoot(t){const a=[mb(muted.has(t)?'Unmute':'Mute','',()=>{flip(muted,t);refreshMenu(t)}),mb(locked.has(t)?'Unlock':'Lock','',()=>{flip(locked,t);refreshMenu(t)})];
+ if(catOf(t)===4){const b=mb('Quick-fill','',async()=>{b.textContent='Filling…';const n=await quickFill(t).catch(()=>-1);b.textContent=n<0?'Could not load':n?'Added '+n:'Nothing to add';if(n>0)setTimeout(()=>refreshMenu(t),700)});a.push(b)}return a}
+async function quickFill(t){await lookup();const have=new Set(tags.map(y=>y.t)),add=[];(imp.get(t)||[]).forEach(n=>!have.has(n)&&add.push(n));
+ const names=(await relFor(t,'general')).map(o=>o.n).slice(0,40);await verify(names);const cap={5:3,6:2,14:1,7:1,9:2,10:1,12:1,8:1,15:1},used={};
+ names.filter(okName).forEach(n=>{if(have.has(n)||cache.get(n)===3||cache.get(n)===4)return;const g=grp(n);if(!cap[g])return;if(g===6&&!/eyes$/.test(n))return;if(g===14&&!/breasts|flat chest/.test(n))return;if((used[g]=(used[g]||0)+1)>cap[g])return;add.push(n)});
+ let j=tags.findIndex(y=>y.t===t);add.forEach(n=>tags.splice(++j,0,{t:n,w:1}));raw.value=ser(tags);commit(false);return add.length}
+const selbar=document.createElement('div');selbar.id='selbar';selbar.hidden=true;document.body.append(selbar);
+function selBar(){selbar.hidden=!selMode;$('#selb').textContent=selMode?'Done':'Select';if(!selMode)return;selbar.textContent='';
+ const sp=document.createElement('span');sp.textContent=pick.size+' selected';selbar.append(sp);
+ const bt=(l,f)=>{const b=document.createElement('button');b.type='button';b.textContent=l;b.onclick=()=>{f();selBar()};selbar.append(b)},ap=f=>{tags.forEach(x=>{if(pick.has(x.t))x.w=f(x.w)});raw.value=ser(tags);render()},
+  fl=set=>()=>{const a=[...pick],all=a.length&&a.every(n=>set.has(n));a.forEach(n=>all?set.delete(n):set.add(n));save();render()};
+ bt('All',()=>{tags.forEach(x=>pick.add(x.t));render()});bt('−',()=>ap(w=>Math.round(Math.max(0,w-.05)*100)/100));bt('+',()=>ap(w=>Math.round(Math.min(10,w+.05)*100)/100));bt('Weight 1',()=>ap(()=>1));
+ bt('Mute',fl(muted));bt('Lock',fl(locked));bt('Move to end',()=>{tags=tags.filter(x=>!pick.has(x.t)).concat(tags.filter(x=>pick.has(x.t)));raw.value=ser(tags);render()});
+ bt('Delete',()=>{tags=tags.filter(x=>!pick.has(x.t));pick.clear();raw.value=ser(tags);render()});bt('Clear',()=>{pick.clear();render()});tipBtns(selbar)}
+$('#selb').onclick=()=>{selMode=!selMode;if(!selMode)pick.clear();closeMenu();selBar();render()};
+$('#chips').addEventListener('click',e=>{if(!selMode)return;const c=e.target.closest('.chip');if(!c||e.target.tagName==='I')return;e.stopImmediatePropagation();e.preventDefault();const n=tags[+c.dataset.i].t;pick.has(n)?pick.delete(n):pick.add(n);selBar();render()},true);
+$('#chips').addEventListener('contextmenu',e=>{if(selMode){e.stopImmediatePropagation();e.preventDefault()}},true);
+const HK='ape-hist';let HL=[];try{HL=JSON.parse(localStorage.getItem(HK)||'[]')}catch(e){}
+const hsave=()=>{try{localStorage.setItem(HK,JSON.stringify(HL))}catch(e){}};
+function recHist(){if(!raw.value.trim())return;const e={d:Date.now(),r:raw.value,n:$('#nl').value,g:$('#neg').value},l=HL[0];if(l&&l.r===e.r&&l.n===e.n)return;HL.unshift(e);HL=HL.slice(0,40);hsave()}
+function showHist(){relT='';rel.hidden=false;rel.innerHTML='';const hd=document.createElement('div');hd.className='rlh';const b=document.createElement('b');b.textContent='Prompt history';const x=document.createElement('button');x.type='button';x.textContent='✕';x.onclick=()=>{rel.hidden=true};hd.append(b,x);
+ const body=document.createElement('div');body.className='rlb';body.style.display='block';rel.append(hd,body);if(!HL.length)body.textContent='Nothing saved yet. Prompts are saved a few seconds after you stop editing, and when you copy.';
+ HL.forEach((e,i)=>{const row=document.createElement('div');row.className='hrow',b1=document.createElement('button'),b2=document.createElement('button');b1.type=b2.type='button';b1.className='opt';
+  b1.textContent=new Date(e.d).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · '+e.r.slice(0,90);b1.onclick=()=>{recHist();raw.value=e.r;$('#nl').value=e.n||'';$('#neg').value=e.g||'';rel.hidden=true;commit(false)};
+  b2.textContent='✕';b2.title='Delete this entry';b2.onclick=()=>{HL.splice(i,1);hsave();showHist()};row.append(b1,b2);body.append(row)})}
+$('#hbtn').onclick=showHist;$('#copy').addEventListener('click',recHist);
+const dl=(n,t,m)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:m}));a.download=n;document.body.append(a);a.click();a.remove()};
+$('#sv1').onclick=()=>dl('prompt.txt',$('#out').textContent+($('#neg').value.trim()?'\n\nNegative prompt: '+$('#neg').value.trim():''),'text/plain');
+$('#sv2').onclick=()=>dl('prompt.json',JSON.stringify({tags:raw.value,sentence:$('#nl').value,negative:$('#neg').value,muted:[...muted],locked:[...locked],groups:[...ovr],snippets:snips},null,1),'application/json');
+$('#ldb').onclick=()=>$('#ldf').click();
+$('#ldf').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const t=await f.text();recHist();
+ try{const j=JSON.parse(t);if(j&&typeof j==='object'&&'tags' in j){raw.value=j.tags||'';$('#nl').value=j.sentence||'';$('#neg').value=j.negative||'';muted.clear();locked.clear();(j.muted||[]).forEach(x=>muted.add(x));(j.locked||[]).forEach(x=>locked.add(x));if(j.snippets)snips=j.snippets;if(Array.isArray(j.groups)){j.groups.forEach(q=>{if(Array.isArray(q)&&typeof q[0]==='string'&&q[1]>=0&&q[1]<GN.length)ovr.set(q[0],+q[1])});saveOvr()}drawSnips();commit(false);return}}catch(x){}
+ raw.value=t.split(/\r?\n/).filter(l=>l.trim()&&!/^negative prompt:/i.test(l)).join(', ');commit(false)};
+$('#cas').onchange=e=>{const v=e.target.value;e.target.value='';if(!v)return;
+ const T={u:()=>finalTags().split('\n').map(l=>l.split(', ').map(x=>x.replace(/ /g,'_')).join(', ')).join('\n'),w:()=>ser(tags.filter(x=>!muted.has(x.t)).map(x=>({t:x.t,w:1}))),o:()=>finalTags().replace(/,?\n/g,', ')}[v](),nl=$('#nl').value.trim();
+ navigator.clipboard.writeText([T,nl].filter(Boolean).join('\n')).then(()=>{const o=e.target.options[0];o.textContent='copied!';setTimeout(()=>{o.textContent='choose…'},1200)})};
+const MT={'Mute':'Keep the block but leave it out of the final prompt','Unmute':'Put the block back into the final prompt','Lock':'Keep this block in its place when you press Sort','Unlock':'Let Sort move this block again','Quick-fill':'Add the series and the usual hair, eyes and outfit tags for this character','Delete':'Remove this block','Danbooru wiki ↗':'Open this tag on the Danbooru wiki (new tab)','−1':'Lower the weight by 1','−0.05':'Lower the weight by 0.05 (hold to repeat)','+0.05':'Raise the weight by 0.05 (hold to repeat)','+1':'Raise the weight by 1','1 (reset)':'Back to normal weight 1','All':'Select every block','−':'Lower the weight of the selected blocks by 0.05','+':'Raise the weight of the selected blocks by 0.05','Weight 1':'Set selected blocks to normal weight','Move to end':'Move selected blocks to the end','Clear':'Unselect everything','✕':'Close'};
+function tipBtns(r){r.querySelectorAll('button').forEach(b=>{const t=MT[b.textContent.trim()];if(t&&!b.title)b.title=t})}
+const TIP={sort:'Group the tags in a good order (locked blocks stay put)',clean:'Fix formatting and remove duplicates without changing the order',undo:'Undo the last change (Ctrl+Z)',redo:'Redo (Ctrl+Y)',rw:'Set every weight back to 1',clr:'Remove all tags (Undo brings them back)',selb:'Pick several blocks to change them together',rzp:'Make the blocks bigger',hbtn:'Open earlier versions of your prompt',sv1:'Download the prompt as a text file',sv2:'Download everything (tags, sentence, negative, mute and lock) as a file',ldb:'Load a .txt or .json file you saved',cas:'Copy the prompt in another format',copy:'Copy exactly the text shown in Final prompt (Ctrl+Enter in the tag box)',copy2:'Copy the final prompt',undo2:'Undo the last change',copyn:'Copy the negative prompt',ssave:'Save the current tags under this name to reuse later',bk:'Copy a backup of your boxes and snippets',rs:'Paste a backup to restore it',lay:'Grouped lines: one line per part. One line: a single comma list',ord:'Put the tags or the sentence first',bgsel:'Color used when the background is added automatically'};
+for(const k in TIP){const e=document.getElementById(k);e&&!e.title&&(e.title=TIP[k])}
+[['autosort','Sort the tags when you click away from the box'],['autobg','Add simple background and a color to the final prompt if you have no background tag']].forEach(([k,v])=>{const e=document.getElementById(k);e&&(e.parentNode.title=v)});
+/*FAMDATA*/
+`Pussy / vulva|pussy,spread pussy,pussy juice,cleft of venus,pussy peek,cameltoe,partially visible vulva,clitoris,clitoral hood,fat mons,pussy juice stain,uncensored
+Censoring|uncensored,censored,mosaic censoring,bar censor,convenient censoring,heart censor,novelty censor,steam censor,blur censor,hair censor,pointless censoring,out-of-frame censoring
+Pubic hair|pubic hair,female pubic hair,pubic hair peek,stray pubic hair,colored pubic hair,male pubic hair,pubic tattoo
+Body hair|body hair,armpit hair,leg hair,arm hair,chest hair,navel hair,pubic hair,facial hair
+Facial hair|facial hair,beard,mustache,goatee,stubble,sideburns,long sideburns,chest hair
+Nipples|nipples,puffy nipples,inverted nipples,covered nipples,dark nipples,large areolae,light areolae,areola slip,nipple slip,no nipples,pasties,heart pasties,nipple piercing,bandaids on nipples
+Breast state|cleavage,underboob,sideboob,backboob,breasts out,one breast out,breasts apart,hanging breasts,sagging breasts,perky breasts,bouncing breasts,covering breasts,breast press,breast hold
+Ass / butt|ass,huge ass,flat ass,ass visible through thighs,butt crack,ass focus,dimples of venus,spread ass,ass grab,grabbing own ass
+Legs / thighs|barefoot,thighs,thick thighs,thigh gap,bare legs,long legs,kneepits,feet,soles,toes,toenails,legs
+Waist / belly|navel,stomach,midriff,groin,hip bones,wide hips,narrow waist,abs,toned,covered navel,navel piercing,navel cutout,belly,hip focus
+Armpits|armpits,armpit crease,armpit peek,armpit hair,arms up,arm up,arms behind head,arm behind head
+Back / shoulders|bare back,back,backless outfit,shoulder blades,nape,bare shoulders,single bare shoulder,off shoulder,collarbone
+Skin marks|freckles,mole,mole under eye,mole under mouth,mole on breast,mole on thigh,scar,scar on face,tattoo,shoulder tattoo,chest tattoo,stomach tattoo,facial mark
+Tan / skin tone|tan,tanlines,bikini tan,one-piece tan,dark skin,dark-skinned female,very dark skin,pale skin,white skin,colored skin
+Wet / sweat|wet,wet hair,wet clothes,wet shirt,wet swimsuit,wet panties,sweat,saliva,drooling,tears,steam,steaming body,dripping
+Open / unfastened|open clothes,open shirt,open jacket,open vest,open coat,open cardigan,open hoodie,unbuttoned,partially unbuttoned,unzipped,partially unzipped,open fly
+Lift / pull|clothes lift,shirt lift,skirt lift,dress lift,sweater lift,bra lift,clothes pull,shirt pull,skirt pull,panty pull,bra pull,shorts pull,pants pull,pantyhose pull,swimsuit pull
+By whom|lifted by self,pulled by self,lifted by another,pulled by another,lifting own clothes
+Aside / peek|panties aside,clothing aside,bikini aside,swimsuit aside,leotard aside,pantyshot,panty peek,upskirt,downblouse,bra peek,midriff peek,wardrobe malfunction
+Cutouts / openings|clothing cutout,cleavage cutout,navel cutout,underboob cutout,back cutout,side cutout,shoulder cutout,hip vent,side slit,center opening,backless outfit,strapless,halterneck,spaghetti strap,strap slip
+Fit|tight clothes,taut clothes,skin tight,oversized clothes,loose clothes,revealing clothes,see-through,torn clothes,impossible clothes,undersized clothes
+Pattern|striped clothes,striped,vertical stripes,plaid,polka dot,floral print,animal print,leopard print,cow print,tiger print,argyle,checkered,heart print,star print,camouflage
+Skirt type*|miniskirt,microskirt,skirt,long skirt,pleated skirt,plaid skirt,pencil skirt,high-waist skirt,denim skirt,frilled skirt,suspender skirt,bubble skirt,layered skirt,hakama skirt
+Dress type*|dress,short dress,long dress,sundress,china dress,wedding dress,pinafore dress,sailor dress,sweater dress,halter dress,strapless dress,sleeveless dress,collared dress,frilled dress,evening gown
+Top type*|shirt,t-shirt,tank top,crop top,tube top,camisole,blouse,sweater,turtleneck,hoodie,cardigan,vest,dress shirt,collared shirt,sleeveless shirt,off-shoulder shirt
+Jacket / coat*|jacket,open jacket,cropped jacket,track jacket,hooded jacket,leather jacket,blazer,coat,long coat,trench coat,winter coat,raincoat,labcoat,cape,capelet,cloak
+Bikini style*|bikini,micro bikini,string bikini,highleg bikini,thong bikini,side-tie bikini bottom,front-tie bikini top,frilled bikini,strapless bikini,o-ring bikini,bikini skirt,lowleg bikini,bikini top only,bikini bottom only
+Swimsuit type*|one-piece swimsuit,school swimsuit,competition swimsuit,highleg swimsuit,slingshot swimsuit,casual one-piece swimsuit,old school swimsuit,swimsuit under clothes
+Leotard / bodysuit*|leotard,highleg leotard,strapless leotard,thong leotard,see-through leotard,bodysuit,latex bodysuit,plugsuit,pilot suit,playboy bunny
+Legwear style*|thighhighs,kneehighs,over-kneehighs,pantyhose,fishnets,fishnet pantyhose,fishnet thighhighs,thighband pantyhose,stockings,garter straps,garter belt,leggings,leg warmers,single thighhigh,toeless legwear,stirrup legwear
+Boots / shoes*|shoes,boots,knee boots,thigh boots,ankle boots,high heel boots,high heels,platform footwear,strappy heels,pumps,mary janes,loafers,sneakers,sandals,flip-flops,rubber boots
+Glove style*|gloves,fingerless gloves,elbow gloves,partially fingerless gloves,half gloves,mittens,single glove,single elbow glove,bridal gauntlets,gauntlets,paw gloves
+Hats*|hat,sun hat,straw hat,witch hat,santa hat,beret,baseball cap,peaked cap,sailor hat,nurse cap,mob cap,top hat,wizard hat,pirate hat,cowboy hat,beanie
+Hair ornament shape|hair ribbon,hair bow,hairclip,hairpin,hair flower,hair bell,hair bobbles,hair tubes,hair scrunchie,hair stick,hair rings,star hair ornament,heart hair ornament,butterfly hair ornament,cross hair ornament,crescent hair ornament
+Eyewear|glasses,sunglasses,round eyewear,semi-rimless eyewear,rimless eyewear,under-rim eyewear,black-framed eyewear,red-framed eyewear,rectangular eyewear,eyewear on head,goggles on head,monocle,eyepatch,tinted eyewear
+Jewelry|jewelry,necklace,pearl necklace,heart necklace,earrings,hoop earrings,stud earrings,bracelet,ring,wedding ring,anklet,brooch,pendant,ear piercing,navel piercing
+Outfit|school uniform,serafuku,gym uniform,buruma,summer uniform,winter uniform,military uniform,naval uniform,maid,nurse,waitress,miko,cheerleader,playboy bunny
+Wings|wings,angel wings,demon wings,bat wings,fairy wings,butterfly wings,feathered wings,mechanical wings,low wings,detached wings,single wing,dragon wings,bird wings
+Horns|horns,demon horns,dragon horns,oni horns,single horn,curled horns,sheep horns,goat horns,cow horns,skin-covered horns,horn ornament,fake horns,antlers
+Girl type|cat girl,fox girl,dog girl,wolf girl,rabbit girl,horse girl,cow girl,mouse girl,tiger girl,lion girl,bird girl,dragon girl,demon girl,monster girl,slime girl
+Ear detail|pointy ears,long pointy ears,floppy ears,ears down,extra ears,animal ear fluff,ear ornament,ear blush,ear piercing,fake animal ears
+Blush / shy|blush,light blush,nose blush,full-face blush,ear blush,body blush,blush stickers,embarrassed,shy,nervous,trembling
+Crying|tears,tearing up,crying,crying with eyes open,streaming tears,happy tears,sad,wince
+Teeth / tongue|tongue,teeth,upper teeth,clenched teeth,sharp teeth,fang,fang out,skin fang,tongue out,long tongue,licking lips,lip biting,saliva trail,saliva
+Makeup / lips|lips,pink lips,red lips,purple lips,blue lips,black lips,lipstick,makeup,eyeshadow,eyeliner,mascara,red eyeshadow
+Eyebrows|thick eyebrows,short eyebrows,v-shaped eyebrows,forked eyebrows,furrowed brow,raised eyebrows,raised eyebrow,eyebrows hidden by hair,hikimayu
+Pupils|slit pupils,heart-shaped pupils,star-shaped pupils,symbol-shaped pupils,flower-shaped pupils,diamond-shaped pupils,horizontal pupils,constricted pupils,no pupils,white pupils,bright pupils,ringed eyes,empty eyes,blank eyes,glowing eyes,crazy eyes
+Eye covering|heterochromia,multicolored eyes,colored sclera,half-closed eyes,one eye closed,one eye covered,hair over one eye,hair over eyes,eyes visible through hair,covered eyes,closed eyes
+Hair strands|hair between eyes,hair over one eye,hair over eyes,hair over shoulder,hair over breasts,hair intakes,hair flaps,hair behind ear,sidelocks,antenna hair,ahoge,heart ahoge,huge ahoge,pointy hair
+Hairstyle (more)|two side up,one side up,short twintails,high ponytail,short ponytail,low ponytail,folded ponytail,braided ponytail,french braid,side braid,crown braid,half updo,hair up,bob cut,hime cut,drill hair
+Sitting style|seiza,wariza,yokozuwari,indian style,crossed legs,legs together,knees together feet apart,knees up,hugging own legs,sitting on lap,sitting on person,sitting on desk,on chair,on couch,on floor,on bed
+Lying / resting|lying,on back,on side,on stomach,fetal position,reclining,sleeping,legs up,spread legs,knees to chest,top-down bottom-up,all fours,under covers
+Leg pose|spread legs,legs apart,wide spread legs,legs together,leg up,legs up,standing on one leg,standing split,leg lift,crossed legs,m legs,leg hold,pigeon-toed,tiptoes,kicking
+Arm pose|hand up,hands up,arms up,arm up,arms behind back,arms behind head,arms at sides,arms under breasts,crossed arms,outstretched arms,outstretched arm,spread arms,arm support,arm hug,v arms,w arms
+Hand on self|hand on own hip,hands on own hips,hand on own chest,hands on own chest,hand on own face,hands on own face,hand on own head,hand on own cheek,hand on own stomach,hand on own thigh,hand on own knee,hand on own chin,hand in own hair,hand on headwear
+Gesture|peace sign,double v,v,w,waving,salute,thumbs up,ok sign,pointing,finger to mouth,finger to cheek,shushing,middle finger,finger gun,index finger raised,own hands together,heart hands,claw pose,come hither,beckoning,reaching,outstretched hand
+Head / gaze|head tilt,head back,head rest,profile,facing away,facing viewer,eye contact,sideways glance,looking ahead,looking afar,staring,looking at another,looking at phone,looking up,looking down
+Crop|cropped torso,cropped legs,out of frame,feet out of frame,head out of frame,lower body,upper body,cowboy shot,wide shot,close-up,portrait,full body,straight-on
+Action|walking,running,jumping,flying,falling,dancing,stretching,kicking,leaning forward,leaning back,leaning to the side,bent over,arched back,squatting,kneeling,twisted torso,contrapposto
+Holding|holding,holding food,holding phone,holding cup,holding flower,holding book,holding umbrella,holding weapon,holding sword,holding staff,holding bag,holding hands,holding hat,holding towel,holding stuffed toy,holding bottle,holding plate,holding fan,holding bouquet
+Interaction|hug,hug from behind,holding hands,kiss,cheek-to-cheek,kissing cheek,imminent kiss,face-to-face,heads together,cuddling,carrying,princess carry,piggyback,lap pillow,headpat
+Indoor place|indoors,bedroom,bathroom,kitchen,classroom,library,hallway,locker room,restaurant,cafe,shop,gym,stage,church,shrine,balcony,rooftop
+Outdoor place|outdoors,beach,ocean,pool,forest,city,street,alley,park bench,field,mountain,river,lake,waterfall,snow,cherry blossoms,flower field,desert,cityscape
+Sky / weather|cloud,sky,blue sky,cloudy sky,night sky,starry sky,sunset,sunrise,twilight,dusk,evening,rain,snowing,wind,fog,lightning,rainbow,moon,full moon,crescent moon,sun
+Background pattern|halftone background,striped background,polka dot background,checkered background,argyle background,heart background,sparkle background,starry background,floral background,sunburst background,patterned background,abstract background,two-tone background,gradient background
+Photo effects|depth of field,blurry,blurry background,blurry foreground,motion blur,bokeh,chromatic aberration,film grain,bloom,glint,sparkle,light particles,glowing,backlighting,lens flare
+Art style|monochrome,greyscale,sketch,lineart,flat color,anime coloring,faux traditional media,watercolor (medium),traditional media,painting (medium),realistic,retro artstyle,limited palette,muted color,pale color,high contrast,spot color`.split('\n').forEach(l=>{const[a,b]=l.split('|'),cp=a.endsWith('*');FAM.push({l:cp?a.slice(0,-1):a,m:b.split(','),cp:cp?1:undefined})});
+/*ENDFAM*/
+
+/*FAMDATA2*/
+`Anal / anus|anus,anal,spread anus,anus peek,anal beads,anal object insertion,anal fingering,anal tail,butt plug,after anal,cum in ass,ass grab,spread ass,ass focus
+Sex acts|sex,vaginal,anal,oral,fellatio,cunnilingus,paizuri,handjob,footjob,masturbation,fingering,clothed sex,group sex,threesome,after sex,implied sex
+Sex position|missionary,doggystyle,sex from behind,girl on top,cowgirl position,reverse cowgirl position,standing sex,mating press,prone bone,straddling,upright straddle,top-down bottom-up,full nelson,legs up
+Cum|cum,cum in pussy,cum on body,cum on breasts,cum on hair,cum on ass,cum on stomach,cum in mouth,cum on clothes,cum on tongue,facial,bukkake,cumdrip,cum string,cum pool,projectile cum,ejaculation,internal cumshot,overflow
+Penis / male|penis,erection,large penis,huge penis,veiny penis,testicles,foreskin,precum,flaccid,small penis,penis on face,disembodied penis,multiple penises,male pubic hair
+Oral detail|fellatio,deepthroat,irrumatio,licking penis,cooperative fellatio,after fellatio,fellatio gesture,cunnilingus,licking,tongue out,saliva,drooling,cum in mouth
+Arousal / reaction|orgasm,female orgasm,ahegao,heavy breathing,trembling,moaning,torogao,fucked silly,rolling eyes,naughty face,seductive smile,come hither,half-closed eyes,heart-shaped pupils,blush,sweat
+Toys / bondage|sex toy,vibrator,dildo,egg vibrator,remote control vibrator,hitachi magic wand,strap-on,anal beads,butt plug,bdsm,bondage,bound,bound wrists,rope,shibari,handcuffs,leash,ball gag,gag,blindfold,collar
+Nude / undressed|nude,completely nude,topless,bottomless,naked shirt,naked apron,naked towel,naked sweater,naked jacket,naked ribbon,naked cape,no bra,no panties,no pants,no shirt,underwear only,partially undressed,undressing
+Lingerie style|lingerie,babydoll,negligee,chemise,camisole,garter belt,garter straps,bustier,corset,thong,g-string,pasties,maebari,crotchless panties,cupless bra,bow bra
+Weapons|weapon,sword,katana,gun,rifle,handgun,staff,spear,polearm,bow (weapon),knife,dagger,axe,shield,scythe,wand,holding weapon,holding sword,holding gun
+Flowers / plants|flower,rose,petals,cherry blossoms,lily (flower),sunflower,hibiscus,spider lily,hydrangea,lotus,wisteria,bouquet,flower field,leaf,tree,grass,plant
+Symbols / marks|heart,star (symbol),sparkle,musical note,sweatdrop,anger vein,flying sweatdrops,speech bubble,spoken heart,spoken ellipsis,motion lines,emphasis lines,notice lines
+Text / meta|signature,artist name,character name,copyright name,english text,watermark,dated,twitter username,web address,logo,commentary,translated,text focus,commission,official art
+Format|virtual youtuber,comic,4koma,2koma,multiple views,chibi,reference sheet,turnaround,character profile,collage,cover,sketch,lineart,greyscale,monochrome,sepia,spot color
+People count|solo,1girl,2girls,3girls,4girls,5girls,6+girls,multiple girls,1boy,2boys,3boys,multiple boys,1other,no humans
+Pairing / focus|solo focus,male focus,hetero,yuri,yaoi,couple,siblings,sisters,twins,brothers
+Nails|fingernails,long fingernails,sharp fingernails,nail polish,toenails,toenail polish,nail art,black nails,red nails,pink nails,blue nails,white nails,green nails,purple nails
+Water|water,wet,splashing,water drop,dripping,bubble,rain,waterfall,ocean,river,lake,underwater,partially submerged,wading,afloat,steam,bath,showering,bathing
+Armor|armor,breastplate,gauntlets,greaves,pauldrons,shoulder armor,helmet,full armor,japanese armor,bikini armor,armored dress,faulds,vambraces
+Japanese / Chinese clothes|japanese clothes,kimono,yukata,hakama,haori,obi,furisode,miko,tabi,geta,zouri,short kimono,print kimono,sarashi,fundoshi,chinese clothes,china dress,hanfu,tangzhuang
+Hood|hood,hood up,hood down,hooded jacket,hooded cloak,hooded coat,hooded capelet,hoodie,animal hood,cat hood,rabbit hood,shark hood
+Collar / neck*|collar,choker,necklace,scarf,neck ribbon,necktie,bowtie,ascot,neckerchief,sailor collar,detached collar,high collar,popped collar,turtleneck,wing collar,fur collar,metal collar,spiked collar,neck bell
+Belts / straps|belt,belt buckle,thigh strap,garter straps,suspenders,harness,chest harness,o-ring,strap slip,arm strap,leg belt,belt pouch,holster,thigh holster,sash,waist cape
+Bags|bag,handbag,shoulder bag,backpack,school bag,randoseru,satchel,duffel bag,shopping bag,paper bag,bag charm
+Alternate version|alternate costume,official alternate costume,alternate hairstyle,alternate hair color,alternate hair length,alternate eye color,alternate breast size,adapted costume,cosplay,costume switch
+Breast size (all)|flat chest,small breasts,medium breasts,large breasts,huge breasts,gigantic breasts,breasts
+Food|food,fruit,strawberry,apple,orange (fruit),cake,candy,lollipop,ice cream,pocky,pizza,burger,sandwich,bread,chocolate,cookie,tea,coffee,milk
+Frills / trim|frills,frilled dress,frilled skirt,frilled shirt collar,frilled sleeves,frilled bikini,frilled panties,frilled thighhighs,frilled apron,frilled hat,frilled hairband,frilled choker,lace trim,ribbon trim,fur trim,gold trim
+Head ornaments|halo,mechanical halo,horns,antlers,animal ears,crown,tiara,circlet,hairband,headpiece,headdress,hair ornament
+Tail type|tail,cat tail,fox tail,wolf tail,dog tail,rabbit tail,horse tail,cow tail,dragon tail,demon tail,mouse tail,tiger tail,lion tail,fish tail,snake tail,squirrel tail,tail ornament,tail ribbon,tail bell
+Underwear type|underwear,panties,bra,thong,boxers,briefs,lingerie,underwear only,male underwear,fundoshi,bloomers,garter belt
+Ribbon / bow*|ribbon,bow,red bow,hair ribbon,hair bow,neck ribbon,hat ribbon,ribbon choker,tail ribbon,waist bow,back bow,ear bow,bowtie`.split('\n').forEach(l=>{const[a,b]=l.split('|'),cp=a.endsWith('*');FAM.push({l:cp?a.slice(0,-1):a,m:b.split(','),cp:cp?1:undefined})});
+`Sit / rest on|on bench,on chair,on couch,on desk,on floor,on ground,on bed,on railing,on fence,on rock,on table,on stairs,on roof,on ledge,on stool,on swing
+Lean against|against wall,against railing,against tree,against window,against fence,against pillar,against glass,against table,against car,against door,leaning on object
+Covering|covering privates,covering face,covering mouth,covering eyes,covering breasts,covering crotch,covering own mouth,covering own eyes,covering ears,covering chest,covering head,covering ass
+Lotus / seat styles|half lotus position,lotus position,royal ease,seiza,wariza,indian style,crossed legs,yokozuwari,hugging own knees,sitting on heels
+Japanese footwear|tabi,geta,zouri,waraji,split-toe socks,sandals,okobo,getas,ankle boots
+Japanese underwear|fundoshi,sarashi,loincloth,maebari,chest wrap,fundoshi under clothes
+Reactions|moaning,torogao,fucked silly,trembling,heavy breathing,panting,stifled laugh,laughing,giggling,gasping,whimper,sigh,yawning
+Flirt gestures|come hither,beckoning,teasing,flashing,seductive smile,blowing kiss,winking,wink,finger to mouth,licking lips,shushing
+Male swimwear|male swimwear,swim briefs,swim trunks,jammers,male underwear,briefs,boxers,fundoshi
+Hair side / up|one side up,two side up,hair up,half updo,hair down,ponytail,high ponytail,twintails,bun,hair bun,double bun
+Hair ends|blunt ends,blunt bangs,hime cut,sidelocks,hair intakes,hair flaps,low-tied long hair,straight hair
+Page / format|cover,cover page,turnaround,reference sheet,lineart,spot color,sepia,sketch,4koma,2koma,1koma,character profile,collage,flat color,greyscale,monochrome
+Rails / structures|railing,fence,wall,stairs,bench,bridge,window,door,balcony,rooftop,pillar,archway,ladder
+Climbing / motion|climbing,jumping,running,walking,swimming,diving,riding,flying,falling,dancing,kicking,crawling
+Instruments|guitar,electric guitar,acoustic guitar,bass guitar,violin,piano,keyboard (instrument),drum set,flute,microphone,playing instrument,instrument case,holding instrument,music stand
+Pose: legs|lotus position,half lotus position,royal ease,crossed legs,legs together,legs apart,spread legs,legs up,leg up,knees up,knees together feet apart,pigeon-toed`.split('\n').forEach(l=>{const[a,b]=l.split('|');FAM.push({l:a,m:b.split(',')})});
+/*ENDFAM2*/
+(function(){let cs=1;try{cs=+localStorage.getItem('ape-cs')||1}catch(e){}
+ const ap=()=>{cs=Math.min(1.8,Math.max(.7,Math.round(cs*10)/10));document.documentElement.style.setProperty('--cs',cs);$('#rzv').textContent=Math.round(cs*100)+'%';try{localStorage.setItem('ape-cs',cs)}catch(e){}};
+ $('#rzm').onclick=()=>{cs-=.1;ap()};$('#rzp').onclick=()=>{cs+=.1;ap()};ap()})();
+
+
+
+function split(s){const o=[];let d=0,b='';for(let i=0;i<s.length;i++){const c=s[i];if(c==='\\'){b+=c+(s[++i]||'');continue}
+ if(c==='('&&(d>0||!b.trim()))d++;else if(c===')'&&d>0)d--;if(c===','&&!d){o.push(b);b=''}else b+=c}o.push(b);return o}
+function parse(s){return split(s).map(p=>p.trim()).filter(Boolean).map(p=>{const m=p.match(/^\((.*):\s*(-?(?:\d+\.?\d*|\.\d+))\)$/);
+ const t=SP((m?m[1]:p).replace(/\\([()])/g,'$1')).replace(/\s+/g,' ').trim().toLowerCase();return{t,w:m?Math.round(Math.min(10,Math.max(0,+m[2]))*100)/100:1}})}
+const ser=a=>a.map(x=>{const e=x.t.replace(/([()])/g,'\\$1');return x.w!==1?`(${e}:${x.w})`:e}).join(', ');
+const ovr=new Map();try{JSON.parse(localStorage.getItem('ape-ovr')||'[]').forEach(p=>ovr.set(p[0],+p[1]))}catch(e){}
+const saveOvr=()=>{try{localStorage.setItem('ape-ovr',JSON.stringify([...ovr]))}catch(e){}};
+function grp(t){if(ovr.has(t))return ovr.get(t);const c=cache.get(t);if(c===1||c===5||META.test(t))return 0;if(c===3)return 2;if(c===4)return 4;
+ for(const[i,r]of RULES)if(r.test(t))return i;if(/\((series|franchise)\)$/.test(t))return 2;if(/ \((meme)\)$/.test(t))return 18;if(/ \((object|creature|species|style|symbol|phrase|brand|food|vehicle|weapon|animal|cosplay|effect)\)$/.test(t))return 17;if(/ \([^()]+\)$/.test(t))return 4;return inh.has(t)?inh.get(t):17}
+const inh=new Map(),gb=new Set();
+const guess=new Map();const AUTO='ape-auto';let autoM={};try{autoM=JSON.parse(localStorage.getItem(AUTO)||'{}')}catch(e){}
+for(const k in autoM){inh.set(k,autoM[k][0]);guess.set(k,autoM[k][1])}
+function autoSave(t,g){if(!guess.has(t))guess.set(t,'parent tags');autoM[t]=[g,guess.get(t)];try{localStorage.setItem(AUTO,JSON.stringify(autoM))}catch(e){}}
+const TGM=[[/head ?wear|hats?/,7],[/foot ?wear|legwear|socks|shoes/,12],[/^hair|hairstyles/,5],[/eyes|face|expression|mouth|emotion/,6],[/post?ure|gestures?|pose|position|action/,13],[/background|scenery|weather|season/,1],[/object|food|weapon|vehicle|toy|instrument/,16],[/body|breast|genital|skin|anatomy/,14],[/jewel|piercing|neckwear|accessor|eyewear/,8],[/underwear/,11],[/attire|cloth|swimsuit|dress/,9],[/cosplay|costume|uniform/,15],[/image composition|censor|text|metadata|format/,0]];
+const KW=[[0,/\b(image|artwork|watermark|censor\w*|resolution|translation|medium|rating)\b/g],[1,/\b(background|scenery|setting|landscape|weather|season|outdoors?|indoors?|location|sky)\b/g],[5,/\bhair\w*\b/g],[6,/\b(eyes?|face|facial|expression|mouth|lips|emotion|personality|smil\w+|mood)\b/g],[7,/\b(hat|headwear|headgear|worn on the head)\b/g],[8,/\b(accessor\w+|jewel\w+|neck|wrist|ornament\w*|decorat\w+)\b/g],[9,/\b(shirt|jacket|garment|clothing|clothes|dress|outfit)\b/g],[10,/\b(skirt|pants|shorts|trousers)\b/g],[11,/\b(underwear|lingerie|undergarment\w*)\b/g],[12,/\b(socks?|stockings?|legwear|footwear|shoes?)\b/g],[13,/\b(pose|posture|position|gesture|action|activity|sexual|holding|performing)\b/g],[14,/\b(body|anatomy|anatomical|breasts?|skin|muscles?|genital\w*|physical)\b/g],[15,/\b(costume|cosplay|uniform|themed)\b/g],[16,/\b(object|item|toy|prop|tool|weapon|food|device|instrument|vehicle)\b/g]];
+async function wikiG(t){const k='wg|'+t,c=cget(k);if(c!=null)return c===-1?17:c;let g=17;
+ try{const r=await fetch(API+'wiki_pages/'+encodeURIComponent(US(t))+'.json');if(r.ok){const b=(await r.json()).body||'';
+  for(const m of b.matchAll(/tag[ _]group:([a-z0-9_ ]+)/gi)){const n=m[1].toLowerCase(),h=TGM.find(q=>q[0].test(n));if(h){g=h[1];break}}
+  if(g===17){const tx=b.replace(/\[\[|\]\]|h\d\.|\[\/?[a-z]+\]/gi,' ').slice(0,600).toLowerCase(),sc=KW.map(([q,re])=>[q,(tx.match(re)||[]).length]).sort((a,b)=>b[1]-a[1]);
+   if(sc[0][1]>=2&&sc[0][1]>=2*sc[1][1])g=sc[0][0]}}}catch(e){return 17}
+ cset(k,g===17?-1:g);return g}
+const ruleG=t=>{for(const[i,r]of RULES)if(r.test(t))return i;return 17};
+function wordG(t){const w=t.replace(/\(.*?\)/g,' ').split(/[\s\-_:']+/).filter(x=>x.length>2).sort((a,b)=>b.length-a.length),last=t.split(' ').pop();
+ for(const x of [last,...w]){const g=ruleG(x);if(g!==17)return g}return 17}
+const isWeak=t=>(guess.get(t)||'').includes('weak');
+let hl=-1;
+function applyHl(){[...$('#leg').children].forEach((x,i)=>x.classList.toggle('hl',i===hl));[...ch.children].forEach(c=>{const x=tags[+c.dataset.i];c.style.opacity=hl<0||!x||grp(x.t)===hl?'':'.25'})}
+function updGrp(gc){const n=[...guess.keys()].filter(isWeak).length;$('#gres').textContent='Reset manual groups to Auto ('+ovr.size+')';$('#gres').disabled=!ovr.size;$('#gclr').textContent='Clear weak guesses ('+n+')';$('#gclr').disabled=!n;const wk=tags.filter(x=>isWeak(x.t)).length,gn=(gc[17]||0)+wk;$('#ggo').textContent='Guess uncategorized ('+gn+')';$('#ggo').disabled=!gn;applyHl()}
+async function guessTag(t){const off=live===false;let g=17,cur=[t];const seen=new Set(cur);
+   for(let d=0;d<3&&g===17&&cur.length&&!off;d++){const nx=[];
+    for(const n of cur){const k='g|'+n;let l=cget(k);if(!l){const j=await jget('tag_implications.json?limit=20&search[status]=active&search[antecedent_name]='+encodeURIComponent(US(n)));l=j.map(o=>SP(o.consequent_name));cset(k,l)}
+     for(const p of l){if(seen.has(p))continue;seen.add(p);const q=grp(p);if(g===17&&![0,2,3,4,17,18].includes(q))g=q;nx.push(p)}}
+    cur=nx}
+   if(g===17&&!off){g=await wikiG(t);if(g!==17)guess.set(t,'the wiki text')}
+   if(g===17&&!off){const rl=(await relFor(t,'general')).map(o=>o.n).slice(0,25),v={};let m=0;
+    rl.forEach(n=>{const q=grp(n);if([0,2,3,4,17,18].includes(q))return;v[q]=(v[q]||0)+1;m++});
+    const top=Object.entries(v).sort((p,q)=>q[1]-p[1])[0];
+    if(top&&top[1]>=4&&top[1]/m>=.45){g=+top[0];guess.set(t,'related tags')}
+    else if(top){g=+top[0];guess.set(t,'related tags (weak)')}}
+   if(g===17){const w=wordG(t);if(w!==17){g=w;guess.set(t,'its words (weak)')}}
+   if(g===17){g=13;guess.set(t,'default (weak)')}
+   inh.set(t,g);autoSave(t,g);lastSig=null;render();return g}
+async function chainG(){for(const x of tags){const t=x.t;if(grp(t)!==17||gb.has(t)||[1,3,4,5].includes(cache.get(t)))continue;gb.add(t);try{await guessTag(t)}catch(e){gb.delete(t)}}}
+
+function commit(sort,trail){const seen=new Set();tags=parse(raw.value).filter(x=>!seen.has(x.t)&&seen.add(x.t));
+ if(sort)tags=sortTags(tags);
+ raw.value=ser(tags)+(trail&&tags.length?', ':'');render()}
+function render(){if(drag&&drag.on)return;
+ const sig=tags.map(x=>x.t+'|'+x.w+'|'+catOf(x.t)+'|'+grp(x.t)+'|'+(unk.has(x.t)?1:0)+(muted.has(x.t)?'m':'')+(locked.has(x.t)?'k':'')+(pick.has(x.t)?'s':'')).join('\n');
+ if(sig!==lastSig){lastSig=sig;draw()}
+ warn();out();save();fetchMeta();conn();clearTimeout(ht);ht=setTimeout(snap,450);clearTimeout(hrt);hrt=setTimeout(recHist,8000)}
+function draw(){ch.innerHTML='';
+ tags.forEach((x,i)=>{const g=grp(x.t),e=document.createElement('span');e.className='chip'+(unk.has(x.t)?' unk':'');
+  e.style.setProperty('--h',HUE(g));e.style.setProperty('--l',LT(g));if(g===17)e.classList.add('ng');if((guess.get(x.t)||'').includes('weak'))e.classList.add('weak');if(x.w===0)e.classList.add('zero');e.dataset.i=i;e.title=GN[g]+(ovr.has(x.t)?' (set by you)':guess.has(x.t)?' (guessed from '+guess.get(x.t)+')':'');if(x.t.length>50)e.classList.add("xl");else if(x.t.length>30)e.classList.add("lg");if(muted.has(x.t))e.classList.add("mute");if(locked.has(x.t))e.classList.add("lock");if(pick.has(x.t))e.classList.add("sel");
+  const gr=document.createElement('span');gr.className='grip';gr.textContent='⠿';
+  const n=document.createElement('span');n.textContent=x.t;const k=catOf(x.t);if(k)n.className='c'+k;
+  e.append(gr,n);if(x.w!==1){const b=document.createElement('b');b.textContent=x.w;e.append(b)}
+  const d=document.createElement('i');d.textContent='×';e.append(d);ch.append(e)});
+ if(!tags.length)ch.innerHTML='<span class="hint">Tags appear here as you type.</span>';
+ const gc={};tags.forEach(x=>{const g=grp(x.t);gc[g]=(gc[g]||0)+1});[...$('#leg').children].forEach((s,i)=>{s.textContent=GN[i]+(gc[i]?' · '+gc[i]:'');s.style.opacity=gc[i]?1:.5});updGrp(gc)}
+function warn(){const w=[],ts=tags.map(x=>x.t),cnt={};
+ split(raw.value).map(p=>p.trim()).filter(Boolean).length>tags.length&&w.push('Duplicate tags will be removed on clean up.');
+ const z=tags.filter(x=>x.w===0).map(x=>x.t);z.length&&w.push('Weight 0 has no effect: '+z.join(', '));
+ const hi=tags.filter(x=>x.w>1.6).map(x=>x.t);
+ PAIRS.forEach(([a,b])=>ts.includes(a)&&ts.includes(b)&&w.push(`Conflict: "${a}" and "${b}"`));
+ ts.forEach(t=>{const m=t.match(/^(black|blonde|brown|red|blue|pink|white|silver|grey|green|purple|orange|aqua) (hair|eyes)$/);if(m)cnt[m[2]]=(cnt[m[2]]||0)+1});
+ for(const k in cnt)cnt[k]>1&&w.push(`More than one ${k} color`);
+ if(unk.size)w.push('Not on Danbooru (typo or alias): '+[...unk].filter(t=>ts.includes(t)).join(', '));
+ $('#warn').innerHTML='';w.filter(x=>!x.endsWith(': ')).forEach(x=>{const d=document.createElement('div');d.textContent=x;$('#warn').append(d)});
+ if(hi.length){const d=document.createElement('div');d.className='soft';d.textContent='High weight (might distort on Illustrious): '+hi.join(', ');$('#warn').append(d)}}
+function finalTags(){let a=tags.filter(x=>!muted.has(x.t));if($('#autobg').checked&&!a.some(x=>grp(x.t)===1))a.push({t:'simple background',w:1},{t:$('#bgsel').value,w:1});if($('#lay').value!=='l')return ser(a);
+ const L=LINES.map(()=>[]);a.forEach(x=>{const k=LINES.findIndex(l=>l.includes(grp(x.t)));L[k<0?4:k].push(x)});
+ return L.map(l=>l.sort((p,q)=>RK(grp(p.t))-RK(grp(q.t)))).filter(l=>l.length).map(l=>ser(l)+',').join('\n')}
+function out(){const t=finalTags(),n=$('#nl').value.trim();
+ const s=$('#ord').value==='n'?[n,t].filter(Boolean).join('\n'):[t,n].filter(Boolean).join('\n');
+ $('#out').textContent=s;$('#cnt').textContent=tags.length+' tags · '+s.length+' characters'}
+
+async function fetchMeta(){const need=tags.map(x=>x.t).filter(t=>!cache.has(t)&&!tried.has(t));if(!need.length)return;need.forEach(t=>tried.add(t));
+ try{const r=await fetch(API+'tags.json?limit=1000&only=name,category,post_count&search[name_comma]='+encodeURIComponent(need.map(t=>t.replace(/ /g,'_')).join(',')));
+  const j=await r.json();const got=new Set();j.forEach(o=>{const n=SP(o.name);cache.set(n,o.category);pc.set(n,o.post_count);got.add(n)});
+  need.forEach(t=>{if(!got.has(t)&&!META.test(t))unk.add(t)});setLive(true);render()}catch(e){setLive(false)}}
+function setLive(v){live=v;$('#status').textContent=v?'Connected to Danbooru':'Offline: using built-in tag list';const e=$('#sync');pill(v?'':'off',v?'Danbooru synced':'Danbooru not synced · tap to retry',v?'Tags synced':'Not synced');
+ e.title=v?'Connected to Danbooru: live tag suggestions, post counts and colors are working.':'Cannot reach Danbooru, so only a small built-in list (about 190 tags) is used. Open the file from your computer with internet, then tap here to retry.'}
+async function ping(){const e=$('#sync');pill('wait','Checking Danbooru…','Checking…');try{const r=await fetch(API+'autocomplete.json?search[query]=blonde&search[type]=tag_query&limit=1');if(!r.ok)throw 0;await r.json();setLive(true);render()}catch(x){setLive(false)}}
+$('#sync').onclick=()=>{if(live===false)ping()};
+async function verify(names){const need=[...new Set(names)].filter(n=>!pc.has(n));if(!need.length)return true;
+ try{const parts=[];for(let i=0;i<need.length;i+=40)parts.push(need.slice(i,i+40));
+  await Promise.all(parts.map(async p=>{const r=await fetch(API+'tags.json?limit=1000&only=name,category,post_count&search[name_comma]='+encodeURIComponent(p.map(n=>n.replace(/ /g,'_')).join(',')));
+   if(!r.ok)throw new Error('http');const j=await r.json();const got=new Set();
+   j.forEach(o=>{const n=SP(o.name);pc.set(n,o.post_count);cache.set(n,o.category);got.add(n)});p.forEach(n=>{if(!got.has(n))pc.set(n,0)})}));
+  return true}catch(e){return false}}
+
+/* autocomplete */
+let items=[],sel=0,timer,ctl;
+function token(){const v=raw.value,c=raw.selectionStart,a=v.lastIndexOf(',',c-1)+1;
+ return{a,q:SP(v.slice(a,c).replace(/^\s*\(/,'').replace(/:[\d.]*$/,'')).trim().toLowerCase()}}
+function suggest(){const q=token().q;if(q.length<2)return hide();
+ const l=LOCAL.filter(t=>t.startsWith(q)).concat(LOCAL.filter(t=>!t.startsWith(q)&&t.includes(q))).slice(0,8).map(t=>({t}));
+ show(l);clearTimeout(timer);ctl&&ctl.abort();
+ timer=setTimeout(async()=>{ctl=new AbortController();try{const r=await fetch(API+'autocomplete.json?search[type]=tag_query&limit=10&search[query]='+encodeURIComponent(q.replace(/ /g,'_')),{signal:ctl.signal});
+  const j=await r.json();setLive(true);const lv=j.filter(o=>o.type==='tag-word'||o.type==='tag-abbreviation'||o.type==='tag-autocorrect'||o.type==='tag-other-name'||o.type==='tag').map(o=>({t:SP(o.value),c:o.category,n:o.post_count,a:o.antecedent&&SP(o.antecedent)}));
+  const sc=x=>x.t.startsWith(q)?2:x.t.includes(' '+q)?1:0;lv.sort((a,b)=>sc(b)-sc(a)||(b.n||0)-(a.n||0));const seen=new Set(lv.map(x=>x.t));lv.forEach(x=>cache.set(x.t,x.c));if(token().q===q&&document.activeElement===raw)show(lv.concat(l.filter(x=>!seen.has(x.t))).slice(0,10))}catch(e){e.name!=='AbortError'&&setLive(false)}},140)}
+function show(l){items=l;sel=0;if(!l.length)return hide();ac.innerHTML='';
+ l.forEach((x,i)=>{const d=document.createElement('div');d.className=i?'':'on';
+  const a=document.createElement('span'),s=document.createElement('small'),w=document.createElement('button');
+  a.textContent=x.t;a.className='c'+(x.c!=null?x.c:catOf(x.t));
+  s.textContent=[x.a?'alias of '+x.a:'',x.n?x.n.toLocaleString():''].filter(Boolean).join(' · ');
+  w.type='button';w.className='wk';w.textContent='ⓘ';w.title='Danbooru wiki';w.onclick=e=>{e.stopPropagation();wiki(x.t)};
+  d.append(a,s,w);d.title='Right-click: Danbooru wiki';
+  d.oncontextmenu=e=>{e.preventDefault();if(!coarse())wiki(x.t)};
+  d.onmousedown=e=>e.preventDefault();d.onclick=e=>{if(e.button===0)accept(x)};ac.append(d)});
+ ac.style.display='block';placeAC()}
+function placeAC(){if(ac.style.display!=='block')return;const vv=window.visualViewport;
+ if(sheet()){ac.classList.add('fx');const b=vv?Math.max(0,innerHeight-vv.height-vv.offsetTop):0;ac.style.bottom=(b+8)+'px';ac.style.top='auto'}
+ else{ac.classList.remove('fx');ac.style.bottom='auto';ac.style.top=(raw.offsetTop+raw.offsetHeight+2)+'px'}}
+if(window.visualViewport){visualViewport.addEventListener('resize',placeAC);visualViewport.addEventListener('scroll',placeAC)}
+const hide=()=>{ac.style.display='none';items=[]};
+function mark(){[...ac.children].forEach((d,i)=>d.classList.toggle('on',i===sel))}
+function accept(x){const{a}=token(),v=raw.value,b=v.slice(0,a).replace(/\s*$/,''),af=v.slice(raw.selectionStart).replace(/^[^,]*,?\s*/,'');
+ if(x.c!=null)cache.set(x.t,x.c);raw.value=(b?b+', ':'')+x.t+', '+af;hide();commit(false,true);raw.focus()}
+
+raw.addEventListener('input',e=>{const p=raw.selectionStart;if(raw.value.includes('_')){const nv=fixUS(raw.value);if(nv!==raw.value){raw.value=nv;raw.setSelectionRange(p,p)}}
+ if(e.data===','&&raw.selectionStart===raw.value.length){hide();commit(false,true)}else{tags=parse(raw.value);render();suggest()}});
+raw.addEventListener('paste',()=>setTimeout(()=>{hide();commit(false)},0));
+raw.addEventListener('keydown',e=>{const mod=e.ctrlKey||e.metaKey,k=e.key.toLowerCase();
+ if(mod&&e.key==='Enter'){e.preventDefault();$('#copy').click();return}
+ if(mod&&!e.altKey&&k==='z'){e.preventDefault();e.shiftKey?redo():undo();return}
+ if(mod&&!e.altKey&&k==='y'){e.preventDefault();redo();return}
+ if(ac.style.display==='block'&&!mod){if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();sel=(sel+(e.key==='ArrowDown'?1:-1)+items.length)%items.length;return mark()}
+  if(e.key==='Enter'||e.key==='Tab'){e.preventDefault();return accept(items[sel])}if(e.key==='Escape')return hide()}
+ if(mod&&(e.key==='ArrowUp'||e.key==='ArrowDown')){e.preventDefault();let p=0,n=0,idx=-1;const c=raw.selectionStart;
+  for(const s of split(raw.value)){if(c<=p+s.length){idx=s.trim()?n:n-1;break}if(s.trim())n++;p+=s.length+1}
+  if(idx>=0&&tags[idx]){hide();bump(idx,(e.key==='ArrowUp'?1:-1)*(e.shiftKey?1:.05),true)}}});
+raw.addEventListener('blur',()=>{clearTimeout(timer);ctl&&ctl.abort();hide();commit($('#autosort').checked)});
+
+/* weight */
+function setWi(i,w){w=Math.round(Math.min(10,Math.max(0,w))*100)/100;tags[i].w=w;raw.value=ser(tags);render()}
+function bump(i,d,keep){setWi(i,tags[i].w+d);if(keep){const p=ser(tags.slice(0,i+1)).length;raw.setSelectionRange(p,p)}}
+let wacc=0,wchip=-1,wlast=0;
+ch.addEventListener('wheel',e=>{const c=e.target.closest('.chip');if(!c)return;e.preventDefault();
+ let dy=e.deltaY||e.deltaX;if(e.deltaMode===1)dy*=33;const i=+c.dataset.i,now=Date.now();
+ if(i!==wchip||now-wlast>250){wchip=i;wacc=0}wlast=now;wacc+=dy;if(Math.abs(wacc)<60)return;
+ const dir=wacc<0?1:-1;wacc=0;if(tags[i])bump(i,dir*(e.shiftKey?1:.05))},{passive:false});
+
+/* block menu */
+function mrow(label){const r=document.createElement('div');r.className='mr';const s=document.createElement('span');s.textContent=label;const o=document.createElement('div');o.className='opts';r.append(s,o);return[r,o]}
+function rep(b,fn){let t,iv;const stop=()=>{clearTimeout(t);clearInterval(iv)};
+ b.addEventListener('pointerdown',e=>{if(e.button)return;e.preventDefault();fn();t=setTimeout(()=>{iv=setInterval(fn,90)},380)});
+ ['pointerup','pointerleave','pointercancel'].forEach(n=>b.addEventListener(n,stop));
+ b.addEventListener('click',e=>{if(e.detail===0)fn()})}
+function mb(txt,cls,fn,hold){const b=document.createElement('button');b.type='button';b.className=cls||'';b.textContent=txt;if(hold)rep(b,fn);else b.onclick=fn;return b}
+function variantRows(t){const rows=[],k=catOf(t);if([1,3,4,5].includes(k))return rows;const cm=t.match(CRE);
+ if(cm){rows.push({l:'Color',mode:'swap',cur:t,noun:cm[2],o:COLORS.filter(c=>c!=='blonde'||/hair$/.test(cm[2])).map(c=>c+' '+cm[2])})}
+ else if(NOUN.test(t)){rows.push({l:'Color',mode:'swap',cur:null,noun:t,o:COLORS.filter(c=>c!=='blonde').map(c=>c+' '+t)})}
+ const bare=cm?cm[2]:t;
+ for(const f of FAM){let list=null,mode='swap';
+  if(f.cp&&cm&&f.m.includes(bare))list=f.m.map(m=>cm[1]+' '+m);
+  else if(f.m.includes(t))list=f.m;
+  else if(f.set&&f.o&&f.o(t)){list=f.nt?f.m.filter(m=>m!==f.nt):f.m;mode='set'}
+  else if(!f.m.includes(t)&&f.o&&f.o(t)&&f.set===undefined&&!f.cp)list=null;
+  if(list)rows.push({l:f.l,mode,fam:f,cur:mode==='swap'?t:null,o:list})}
+ return rows}
+const undoMap=new Map();
+function refreshMenu(name){const i=tags.findIndex(y=>y.t===name);if(i<0){closeMenu();return}const st=menu.scrollTop;openMenu(i,mx,my);menu.scrollTop=st}
+function applyVariant(i,nt,row){const x=tags[i],orig=x.t;
+ if(row.mode==='set'){const j=tags.findIndex(y=>row.fam.m.includes(y.t));if(j>=0){if(tags[j].t===nt)tags.splice(j,1);else tags[j]={t:nt,w:tags[j].w}}else tags.splice(i+1,0,{t:nt,w:1})}
+ else{if(nt===orig)return;undoMap.set(nt,orig);tags[i]={t:nt,w:x.w}}
+ raw.value=ser(tags);commit(false);const keep=row.mode==='set'?orig:nt,idx=tags.findIndex(y=>y.t===nt),el=ch.children[idx];el&&el.classList.add('landed');refreshMenu(keep)}
+function addExtra(i,o){const name=tags[i].t,j=tags.findIndex(y=>y.t===o);if(j>=0)tags.splice(j,1);else tags.splice(i+1,0,{t:o,w:1});raw.value=ser(tags);commit(false);refreshMenu(name)}
+function drawRow(r,state){const h=r.host;h.textContent='';let n=0;
+ r.o.forEach(o=>{const c=pc.get(o),isCur=o===r.cur||o===r.present;if(state==='ok'&&c===0&&!isCur)return;
+  const b=document.createElement('button');b.type='button';b.className='opt'+(isCur?' on':'');
+  let lab=o;if(r.noun){lab=o.slice(0,-r.noun.length-1);const sw=document.createElement('span');sw.className='sw';sw.style.background=SW[lab]||'#888';b.append(sw)}
+  b.append(document.createTextNode(lab));b.title=o+(c!=null?' · '+c.toLocaleString()+' posts':'');
+  b.onclick=()=>{if(o!==r.cur||(r.mode==='set'&&o===r.present)){applyVariant(mi,o,r);return}const base=undoMap.get(o)||r.noun;if(base&&base!==o)applyVariant(mi,base,r)};
+  const g=document.createElement('span');g.className='og'+(isCur?' on':'')+(state==='pend'?' chk':'');g.append(b);
+  if(r.mode!=='set'){const has=tags.some(y=>y.t===o),pl=document.createElement('button');pl.type='button';g.classList.add('sp');
+   const gl=document.createElement('span');gl.className='g';pl.append(gl);
+   if(isCur){pl.className='opt plus on cur';gl.textContent='✓';pl.title='Current tag';pl.tabIndex=-1}
+   else{pl.className='opt plus'+(has?' on':'');gl.textContent=has?'✓':'+';pl.title=has?'Remove this extra tag':'Add as an extra tag and keep the current one';pl.onclick=()=>addExtra(mi,o)}
+   g.append(pl)}
+  h.append(g);if(!isCur)n++});
+ r.wrap.hidden=!n}
+function place(){if(sheet()){menu.style.left='';menu.style.top='';return}
+ const r=menu.getBoundingClientRect();let l=mx,t=my;if(l+r.width>innerWidth-8)l=innerWidth-r.width-8;if(t+r.height>innerHeight-8)t=innerHeight-r.height-8;
+ menu.style.left=Math.max(8,l)+'px';menu.style.top=Math.max(8,t)+'px'}
+function openMenu(i,x,y){if(!tags[i])return;const t=tags[i].t;mi=i;mx=x;my=y;const tok=++mtok;menu.innerHTML='';
+ menu._reidx=()=>{const n=tags.findIndex(y=>y.t===t);if(n>=0){i=n;mi=n}};
+ const hd=document.createElement('div');hd.className='mh';const nm=document.createElement('b');nm.textContent=t;const k=catOf(t);if(k)nm.className='c'+k;
+ hd.append(nm,mb('✕','mx',closeMenu));menu.append(hd);
+ const [r1,o1]=mrow('Weight'),wv=document.createElement('span');wv.className='wv';
+ const [r2,o2]=mrow('Presets'),pre=[];
+ const sync=()=>{wv.textContent=fmt(tags[i].w);wv.classList.toggle('z',tags[i].w===0);pre.forEach(([w,b])=>b.classList.toggle('on',Math.abs(tags[i].w-w)<1e-9))};
+ const step=d=>()=>{if(!tags[i])return;setWi(i,tags[i].w+d);sync()};
+ o1.className='opts stp';o1.append(mb('−1','opt',step(-1)),mb('−0.05','opt',step(-.05),true),wv,mb('+0.05','opt',step(.05),true),mb('+1','opt',step(1)));
+ [.5,.8,.9,1,1.1,1.2,1.3,1.5,2].forEach(w=>{const b=mb(w===1?'1 (reset)':String(w),'opt',()=>{setWi(i,w);sync()});pre.push([w,b]);o2.append(b)});
+ menu.append(r1,r2);sync();
+ const rows=variantRows(t);rows.forEach(r=>{const [w,h]=mrow(r.l);r.wrap=w;r.host=h;
+  if(r.mode==='set'){const j=tags.findIndex(y=>r.fam.m.includes(y.t));r.present=j>=0?tags[j].t:null}
+  menu.append(w);drawRow(r,live!==false&&r.o.every(o=>pc.has(o))?'ok':'pend')});
+ addDyn(t,tok);
+ {const [gw,gh]=mrow('Sort group'),sl=document.createElement('select'),had=ovr.get(t);ovr.delete(t);const ag=grp(t);if(had!=null)ovr.set(t,had);
+  const o0=document.createElement('option');o0.value='-1';o0.textContent='Auto ('+GN[ag]+')';sl.append(o0);GN.forEach((g,j)=>{const o=document.createElement('option');o.value=j;o.textContent=g;sl.append(o)});
+  sl.value=had!=null?String(had):'-1';sl.title='Choose which sort group this tag belongs to. It is remembered on this device.';
+  sl.onchange=()=>{const v=+sl.value;v<0?ovr.delete(t):ovr.set(t,v);saveOvr();lastSig=null;render();refreshMenu(t)};gh.append(sl);menu.append(gw);
+  if(had==null&&(ag===17||isWeak(t))){const [qw,qh]=mrow('Guess'),wk=isWeak(t),qb=mb(wk?'Re-guess this tag':'Guess this tag','opt',async()=>{qb.disabled=true;qb.textContent='Guessing…';
+    if(wk){inh.delete(t);guess.delete(t);delete autoM[t];['wg|'+t,'g|'+t,'r|'+t+'|general'].forEach(k=>delete apiC[k]);gb.delete(t)}
+    try{await guessTag(t)}catch(e){gb.delete(t);qb.disabled=false;qb.textContent='Try again';hn.textContent='Could not reach Danbooru. Check the connection.';return}
+    refreshMenu(t)}),hn=document.createElement('span');hn.className='hint';hn.textContent=wk?'Weak guess ('+guess.get(t)+'). Press to research it again.':'Researches only this tag.';qh.append(qb,hn);menu.append(qw)}}
+ const note=document.createElement('div');note.className='mnote';note.hidden=true;note.textContent='Offline: variants were not checked against Danbooru.';menu.append(note);
+ const ft=document.createElement('div');ft.className='foot';ft.append(mb('Danbooru wiki ↗','',()=>wiki(t)),...extraFoot(t),mb('Delete','del',()=>{closeMenu();tags.splice(i,1);raw.value=ser(tags);render()}));menu.append(ft);tipBtns(menu);
+ back.style.display=sheet()?'block':'none';menu.style.display='block';place();
+ if(rows.length)verify(rows.flatMap(r=>r.o)).then(ok=>{if(tok!==mtok||menu.style.display!=='block')return;
+  rows.forEach(r=>drawRow(r,ok?'ok':'off'));note.hidden=ok;if(menu._os&&rows.every(r=>r.wrap.hidden))menu._os();place()})}
+function closeMenu(){mtok++;mi=-1;menu.style.display='none';back.style.display='none'}
+back.addEventListener('click',closeMenu);
+document.addEventListener('pointerdown',e=>{if(menu.style.display==='block'&&!menu.contains(e.target))closeMenu()},true);
+
+addEventListener('keydown',e=>{if(e.key==='Escape'&&menu.style.display==='block')closeMenu()});
+
+/* chip interactions */
+ch.addEventListener('pointerdown',e=>{lastPT=e.pointerType},true);
+ch.addEventListener('click',e=>{if(e.target.tagName==='I'){const c=e.target.parentNode;tags.splice(+c.dataset.i,1);closeMenu();raw.value=ser(tags);render();return}
+ if(lastPT==='mouse'||performance.now()-dragEnd<350)return;const c=e.target.closest('.chip');if(c)openMenu(+c.dataset.i,e.clientX,e.clientY)});
+ch.addEventListener('contextmenu',e=>{const c=e.target.closest('.chip');if(!c)return;e.preventDefault();openMenu(+c.dataset.i,e.clientX,e.clientY)});
+
+/* drag to reorder (mouse: whole block, touch: the handle) */
+const RM=()=>matchMedia('(prefers-reduced-motion:reduce)').matches;
+ch.addEventListener('pointerdown',e=>{const c=e.target.closest('.chip');if(!c||e.button||e.target.tagName==='I')return;
+ if(e.pointerType!=='mouse'&&!e.target.closest('.grip'))return;const r=c.getBoundingClientRect();
+ drag={el:c,i:+c.dataset.i,sx:e.clientX,sy:e.clientY,dx:e.clientX-r.left,dy:e.clientY-r.top,w:r.width,h:r.height,on:false};
+ addEventListener('pointermove',dmove);addEventListener('pointerup',dup);addEventListener('pointercancel',dcancel);addEventListener('keydown',dkey)});
+function flipMove(fn){if(RM())return fn();const els=[...ch.children].filter(k=>k!==drag.el),f=els.map(k=>k.getBoundingClientRect());
+ els.forEach(k=>{k.style.transition='none';k.style.transform=''});fn();
+ els.forEach((k,j)=>{const b=k.getBoundingClientRect(),x=f[j].left-b.left,y=f[j].top-b.top;if(x||y)k.style.transform=`translate(${x}px,${y}px)`});
+ ch.offsetWidth;els.forEach(k=>{if(k.style.transform){k.style.transition='transform .22s cubic-bezier(.2,.8,.2,1)';k.style.transform=''}})}
+function dmove(e){const d=drag;if(!d)return;
+ if(!d.on){if(Math.hypot(e.clientX-d.sx,e.clientY-d.sy)<5)return;
+  if(!d.el.isConnected){d.el=ch.children[d.i];if(!d.el){dstop();drag=null;return}const r=d.el.getBoundingClientRect();d.w=r.width;d.h=r.height}
+  d.on=true;closeMenu();d.ph=document.createElement('div');d.ph.className='ph';
+  d.ph.style.width=d.w+'px';d.ph.style.height=d.h+'px';d.el.before(d.ph);d.el.style.width=d.w+'px';d.el.style.height=d.h+'px';
+  d.el.classList.add('dragging');document.body.classList.add('dg');hide()}
+ e.preventDefault&&e.cancelable&&e.preventDefault();
+ d.el.style.left=(e.clientX-d.dx)+'px';d.el.style.top=(e.clientY-d.dy)+'px';
+ const b=ch.parentNode,br=b.getBoundingClientRect(),x=e.clientX-br.left-b.clientLeft,y=e.clientY-br.top-b.clientTop,
+  kids=[...ch.children].filter(k=>k!==d.el&&k!==d.ph),
+  at=kids.find(k=>y<k.offsetTop||(y<=k.offsetTop+k.offsetHeight&&x<k.offsetLeft+k.offsetWidth/2))||null,
+  cur=kids.find(k=>d.ph.compareDocumentPosition(k)&4)||null;
+ if(at!==cur)flipMove(()=>at?at.before(d.ph):ch.append(d.ph))}
+function dstop(){removeEventListener('pointermove',dmove);removeEventListener('pointerup',dup);removeEventListener('pointercancel',dcancel);removeEventListener('keydown',dkey);document.body.classList.remove('dg')}
+function dcancel(){const d=drag;dstop();drag=null;if(d&&d.on){dragEnd=performance.now();lastSig=null;render()}}
+function dkey(e){if(e.key==='Escape')dcancel()}
+function dup(){const d=drag;dstop();if(!d||!d.on){drag=null;return}dragEnd=performance.now();
+ let to=0;for(const k of ch.children){if(k===d.ph)break;if(k!==d.el)to++}
+ const finish=()=>{drag=null;if(to!==d.i){const[m]=tags.splice(d.i,1);tags.splice(to,0,m);raw.value=ser(tags)}lastSig=null;render();const l=ch.children[to];l&&l.classList.add('landed')};
+ if(RM())return finish();const b=ch.parentNode,br=b.getBoundingClientRect();
+ Object.assign(d.el.style,{transition:'left .16s ease,top .16s ease,transform .16s ease',left:(br.left+b.clientLeft+d.ph.offsetLeft)+'px',top:(br.top+b.clientTop+d.ph.offsetTop)+'px',transform:'none'});
+ setTimeout(finish,170)}
+
+/* undo / redo */
+let hist=[],hi=-1;
+function upd(){[$('#undo'),$('#undo2')].forEach(b=>b.disabled=hi<=0);$('#redo').disabled=hi>=hist.length-1}
+function snap(){const v=raw.value;if(hist[hi]===v)return;hist=hist.slice(0,hi+1);hist.push(v);if(hist.length>150)hist.shift();hi=hist.length-1;upd()}
+function undo(){clearTimeout(ht);snap();if(hi<=0)return;hi--;restore()}
+function redo(){clearTimeout(ht);if(hi>=hist.length-1)return;hi++;restore()}
+function restore(){hide();closeMenu();raw.value=hist[hi];tags=parse(raw.value);render();upd()}
+addEventListener('keydown',e=>{if(e.target===raw||/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;const mod=e.ctrlKey||e.metaKey,k=e.key.toLowerCase();
+ if(mod&&k==='z'){e.preventDefault();e.shiftKey?redo():undo()}else if(mod&&k==='y'){e.preventDefault();redo()}});
+
+/* buttons, copy, snippets, backup */
+$('#sort').onclick=()=>commit(true);$('#clean').onclick=()=>commit(false);
+$('#undo').onclick=undo;$('#undo2').onclick=undo;$('#redo').onclick=redo;
+$('#rw').onclick=()=>{tags.forEach(x=>x.w=1);raw.value=ser(tags);render()};
+$('#clr').onclick=()=>{raw.value='';tags=[];closeMenu();render()};
+['#nl','#ord','#autobg','#bgsel','#lay'].forEach(s=>$(s).addEventListener('input',()=>{out();save()}));$('#neg').addEventListener('input',save);
+const copy=(t,b)=>{const ok=()=>{const o=b.dataset.o||(b.dataset.o=b.textContent);b.textContent='Copied ✓';setTimeout(()=>b.textContent=o,1200)};
+ const fb=()=>{const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;opacity:0';document.body.append(a);a.select();try{document.execCommand('copy');ok()}catch(e){}a.remove()};
+ navigator.clipboard?navigator.clipboard.writeText(t).then(ok,fb):fb()};
+$('#copy').onclick=e=>copy($('#out').textContent,e.target);$('#copy2').onclick=e=>copy($('#out').textContent,e.target);$('#copyn').onclick=e=>copy($('#neg').value,e.target);
+
+let snips=[];function save(){try{localStorage.setItem('ape',JSON.stringify({r:raw.value,n:$('#nl').value,g:$('#neg').value,s:snips,l:$('#lay').value,m:[...muted],k:[...locked]}))}catch(e){}}
+function drawSnips(){const b=$('#snips');b.innerHTML='';snips.forEach((s,i)=>{const w=document.createElement('span');w.className='snip';
+ const a=document.createElement('button'),x=document.createElement('button');a.textContent=s.n;x.textContent='×';
+ a.onclick=()=>{raw.value=(raw.value.trim()?raw.value.replace(/,\s*$/,'')+', ':'')+s.t;commit(false)};x.onclick=()=>{snips.splice(i,1);drawSnips();save()};w.append(a,x);b.append(w)});
+ if(!snips.length)b.innerHTML='<span class="hint">Saved tag groups (outfits, character sets) appear here.</span>'}
+$('#ssave').onclick=()=>{const n=$('#sname').value.trim();if(!n||!tags.length)return;snips.push({n,t:ser(tags)});$('#sname').value='';drawSnips();save()};
+$('#bk').onclick=e=>copy(JSON.stringify({v:1,r:raw.value,n:$('#nl').value,g:$('#neg').value,s:snips}),e.target);
+$('#rs').onclick=()=>{const s=prompt('Paste your backup text here:');if(!s)return;
+ try{const d=JSON.parse(s);if(!d||typeof d!=='object')throw 0;
+  raw.value=String(d.r||'');$('#nl').value=String(d.n||'');$('#neg').value=String(d.g||'');
+  (Array.isArray(d.s)?d.s:[]).forEach(x=>{if(x&&typeof x.n==='string'&&typeof x.t==='string'&&!snips.some(y=>y.n===x.n))snips.push({n:x.n,t:x.t})});
+  drawSnips();commit(false);snap()}catch(e){alert('That is not a valid backup.')}};
+
+/* guide */
+function demoMenu(){
+ const note=t=>{const d=document.createElement('div');d.className='dn';d.textContent=t;return d};
+ const head=n=>{const hd=document.createElement('div');hd.className='mh';const nm=document.createElement('b');nm.textContent=n;hd.append(nm,mb('✕','mx',()=>{}));return hd};
+ const fold=(lab,open)=>{const[w,h]=mrow(lab);w.classList.add('fold');w.firstChild.textContent=(open?'▾ ':'▸ ')+lab;w.firstChild.dataset.s='ok';h.hidden=!open;return[w,h]};
+ const demoPlus=on=>{const pl=document.createElement('button');pl.type='button';pl.className='opt plus'+(on?' on':'');pl.title=on?'Remove this extra tag':'Add as an extra tag and keep the current one';const g=document.createElement('span');g.className='g';g.textContent=on?'✓':'+';pl.append(g);return pl};
+ /* menu 1: blue hair */
+ const h=$('#demoMenu');h.textContent='';h.append(note('stays at the top'),head('blue hair'));
+ const body=document.createElement('div');body.className='dbody';
+ const [a,ao]=mrow('Weight');ao.className='opts stp';const v=document.createElement('span');v.className='wv';v.textContent='1.2';
+ ['−1','−0.05'].forEach(t=>ao.append(mb(t,'opt',()=>{})));ao.append(v);['+0.05','+1'].forEach(t=>ao.append(mb(t,'opt',()=>{})));
+ const [b,bo]=mrow('Presets');[.5,.8,.9,'1 (reset)',1.1,1.2,1.3,1.5,2].forEach(w=>bo.append(mb(String(w),'opt'+(w===1.2?' on':''),()=>{})));
+ const [c,co]=mrow('Color');['black','white','red','blue','green','pink','purple','blonde'].forEach(w=>{const x=mb('','opt',()=>{});const sw=document.createElement('span');sw.className='sw';sw.style.background=SW[w];x.append(sw,document.createTextNode(w));
+  const og=document.createElement('span');og.className='og sp'+(w==='blue'?' on':'');og.append(x,demoPlus(w==='blue'||w==='pink'));co.append(og)});
+ const [d,dop]=mrow('Hair length');['short hair','medium hair','long hair','very long hair'].forEach(w=>dop.append(mb(w,'opt'+(w==='long hair'?' on':''),()=>{})));
+ const [f1,f1h]=fold('See also',false),[f2,f2h]=fold('Related',false);
+ const [g,go]=mrow('Sort group');const sl=document.createElement('select');['Auto (hair)'].forEach(t=>{const o=document.createElement('option');o.textContent=t;sl.append(o)});go.append(sl);
+ body.append(a,b,c,d,f1,f2,g);h.append(note('only this part scrolls'),body,note('stays at the bottom'));
+ const ft=document.createElement('div');ft.className='foot';ft.append(mb('Danbooru wiki ↗','',()=>{}),mb('Mute','',()=>{}),mb('Lock','',()=>{}),mb('Delete','del',()=>{}));h.append(ft);
+ /* menu 2: sitting (shows + and check) */
+ const h2=$('#demoMenu2');h2.textContent='';h2.append(head('sitting'));
+ const [p,po]=mrow('Posture');
+ ['standing','sitting','kneeling','squatting','lying'].forEach(w=>{const og=document.createElement('span');og.className='og sp'+(w==='sitting'?' on':'');og.append(mb(w,'opt',()=>{}));
+  og.append(demoPlus(w==='sitting'||w==='kneeling'));po.append(og)});
+ const [q,qh]=fold('Related',true);qh.className='opts rlt';['sitting on lap','on chair','crossed legs'].forEach(w=>qh.append(mb(w,'opt'+(w==='on chair'?' on':''),()=>{})));
+ h2.append(p,q);
+ h.querySelectorAll('button').forEach(x=>x.tabIndex=-1);h2.querySelectorAll('button,select').forEach(x=>x.tabIndex=-1)}
+const gt=document.querySelectorAll('.tabs button');
+function tab(n){gt.forEach(b=>b.classList.toggle('on',b.dataset.t===n));$('#g-pc').hidden=n!=='pc';$('#g-mob').hidden=n!=='mob'}
+gt.forEach(b=>b.onclick=()=>tab(b.dataset.t));
+
+/* init */
+$('#leg').addEventListener('click',e=>{const x=e.target.closest('span');if(!x)return;const i=[...$('#leg').children].indexOf(x);hl=hl===i?-1:i;applyHl()});
+$('#gres').onclick=()=>{if(!ovr.size||!confirm('Forget all '+ovr.size+' groups you set by hand? Tags go back to automatic groups.'))return;ovr.clear();saveOvr();closeMenu();lastSig=null;commit($('#autosort').checked)};
+$('#gclr').onclick=()=>{const w=[...guess.keys()].filter(isWeak);if(!w.length||!confirm('Forget the '+w.length+' weak (dashed) guesses? Confident guesses and your own groups stay.'))return;w.forEach(t=>{inh.delete(t);guess.delete(t);delete autoM[t];['wg|'+t,'g|'+t,'r|'+t+'|general'].forEach(k=>delete apiC[k])});try{localStorage.setItem(AUTO,JSON.stringify(autoM));localStorage.setItem(AC,JSON.stringify(apiC))}catch(e){}gb.clear();lastSig=null;commit($('#autosort').checked)};
+$('#ggo').onclick=()=>{tags.forEach(x=>{if(!isWeak(x.t))return;const t=x.t;inh.delete(t);guess.delete(t);delete autoM[t];['wg|'+t,'g|'+t,'r|'+t+'|general'].forEach(k=>delete apiC[k])});try{localStorage.setItem(AUTO,JSON.stringify(autoM));localStorage.setItem(AC,JSON.stringify(apiC))}catch(e){}gb.clear();lastSig=null;render();chainG()};
+$('#leg').innerHTML=GN.map((g,i)=>`<span class="${i===17?'ng':''}" style="--h:${HUE(i)};--l:${LT(i)}">${g}</span>`).join('');
+try{const d=JSON.parse(localStorage.getItem('ape')||'{}');raw.value=d.r||'';$('#nl').value=d.n||'';$('#neg').value=d.g||'';snips=d.s||[];if(d.l)$('#lay').value=d.l}catch(e){}
+try{if(localStorage.getItem('ape_g')==='0')$('#guide').open=false}catch(e){}
+$('#guide').addEventListener('toggle',()=>{try{localStorage.setItem('ape_g',$('#guide').open?'1':'0')}catch(e){}});
+$('#chiphint').textContent=coarse()?'Tap a block for its menu (weight, color, length). Drag the ⠿ handle to reorder. Tap × to delete.':'Scroll over a block = weight (hold Shift for ±1). Right-click = menu (weight, color, length). Drag to reorder.';
+ping();demoMenu();tab(coarse()||innerWidth<700?'mob':'pc');
+drawSnips();tags=parse(raw.value);render();snap();upd();
+</script></body></html>
