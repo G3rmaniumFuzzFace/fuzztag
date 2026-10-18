@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>FuzzTag · ANIMA Prompt Editor</title>
+<meta name="description" content="Notepad-style prompt editor for ANIMA / Illustrious with live Danbooru tag sync: autocomplete, auto-cleanup, weights, tag colors, auto-sort and SwarmUI support. Works on PC and phone, no install.">
+<meta property="og:type" content="website"><meta property="og:title" content="FuzzTag · ANIMA Prompt Editor">
+<meta property="og:description" content="Live Danbooru tag sync, auto-cleanup, weights, tag colors, auto-sort and SwarmUI support for ANIMA / Illustrious prompts. Works on PC and phone, no install.">
+<meta property="og:url" content="https://g3rmaniumfuzzface.github.io/fuzztag/"><meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#14131a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏷️%3C/text%3E%3C/svg%3E">
 <style>
+#ftr{max-width:880px;margin:0 auto;padding:4px 16px calc(84px + env(safe-area-inset-bottom));text-align:center;font-size:12px;color:var(--mut)}#ftr a{color:var(--ac)}
 :root{color-scheme:dark;--bg:#14131a;--panel:#1d1c26;--line:#34323f;--tx:#e8e6f0;--mut:#8f8ba3;--ac:#8ab4ff;--bad:#ff7a8a;--k0:#009be6;--k1:#ff8a8b;--k3:#c797ff;--k4:#35c64a;--k5:#ead084}
 @media(prefers-color-scheme:light){:root{color-scheme:light;--bg:#f3f2f7;--panel:#fff;--line:#d6d3e2;--tx:#1d1b29;--mut:#6b6780;--ac:#2f5fd0;--bad:#c2243c;--k0:#0075f8;--k1:#c00004;--k3:#a800aa;--k4:#00ab2c;--k5:#c47a00}}
 *{box-sizing:border-box}[hidden]{display:none!important}
@@ -27,7 +34,7 @@ button.p{background:var(--ac);color:#fff;border-color:var(--ac)}label{color:var(
 #ac small{color:var(--mut);margin-left:auto}#ac .wk{display:none;border:none;background:none;padding:0 4px;color:var(--mut)}
 .c0{color:var(--k0)}.c1{color:var(--k1)}.c3{color:var(--k3)}.c4{color:var(--k4)}.c5{color:var(--k5)}
 #chips{display:flex;flex-wrap:wrap;gap:6px;min-height:34px}
-.chip{--c:hsl(var(--h) 60% 62%);display:inline-flex;gap:6px;align-items:center;padding:3px 4px 3px 10px;border-radius:999px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 16%,transparent);cursor:grab;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;position:relative;white-space:nowrap}
+.chip{--c:hsl(var(--h) 60% 62%);display:inline-flex;gap:6px;align-items:center;padding:3px 4px 3px 10px;border-radius:999px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 18%,transparent);cursor:grab;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;position:relative;white-space:nowrap}
 .chip.ng{--c:#8f8ba3;border-style:dashed}.chip.zero{--c:var(--bad)}.wv.z{color:var(--bad);font-weight:700}.leg span.ng:before{background:#8f8ba3}
 .chip.unk{border-style:dashed;border-color:var(--bad)}.chip.unk>span:nth-child(2){text-decoration:underline wavy var(--bad)}
 .chip b{font-weight:600;font-size:12px;color:var(--c)}.chip i{font-style:normal;cursor:pointer;padding:0 6px;color:var(--mut)}.chip i:hover{color:var(--bad)}
@@ -52,6 +59,7 @@ body.dg{user-select:none;-webkit-user-select:none;cursor:grabbing}
 .mh{display:flex;align-items:center;gap:8px}.mh b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}
 .mr{display:grid;grid-template-columns:64px 1fr;gap:6px;align-items:start;margin-top:9px}
 .mr>span{color:var(--mut);font-size:12px;padding-top:6px}
+.mr>.gnote{grid-column:2;font-size:10.5px;line-height:1.3;color:var(--mut);margin-top:-2px}.mr>.gnote.weak{color:#e0b341}
 .opts{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
 .opt{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:13px}
 .opt:hover{border-color:var(--ac)}.opt.on{background:color-mix(in srgb,var(--ac) 25%,transparent);border-color:var(--ac)}.opt.chk{opacity:.55}
@@ -62,7 +70,7 @@ body.dg{user-select:none;-webkit-user-select:none;cursor:grabbing}
 .demo{position:static;display:block;width:auto;max-width:380px;box-shadow:none;margin-top:8px;background:var(--bg)}
 
 /* v7: colors, zero weight, lock/mute/select, pill, plus buttons, status dots */
-.foot{flex-wrap:wrap}.chip{--c:hsl(var(--h) 62% var(--l,62%))}.leg span:before{background:hsl(var(--h) 62% var(--l,62%))}
+.foot{flex-wrap:wrap}.chip{--c:hsl(var(--h) var(--s,72%) var(--l,62%))}.leg span:before{background:hsl(var(--h) var(--s,72%) var(--l,62%))}
 #chips .chip b{font-size:.8em;color:var(--tx)}
 .chip.zero{--c:var(--bad);border:2px dotted var(--bad);background:transparent}.chip.zero b{color:var(--bad)}
 .chip.mute{opacity:.45}.chip.mute>span:nth-child(2){text-decoration:line-through}.chip.lock>span:nth-child(2):after{content:" 🔒";font-size:.75em}.chip.sel{outline:2px solid var(--ac);outline-offset:2px}
@@ -95,7 +103,7 @@ main>*{min-width:0}
 #chips .chip i{padding:.1em max(.45em,8px);font-size:1.15em}
 #chips .chip.lg{font-size:calc(13px*var(--cs,1))}#chips .chip.xl{font-size:calc(11.5px*var(--cs,1))}
 .opt{max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left}
-.bh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.rz{display:flex;gap:4px;align-items:center;color:var(--mut);font-size:12px}.rz button{min-height:0;padding:1px 10px;line-height:1.3;font-size:16px}
+.bh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.rz{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;align-items:center;color:var(--mut);font-size:12px}#lnb[aria-pressed=true]{background:var(--ac);color:#fff;border-color:var(--ac)}#chips .brk{display:none}#chips.lines .brk{display:block;flex:0 0 100%;height:0;margin:0;padding:0}.rz button{min-height:0;padding:1px 10px;line-height:1.3;font-size:16px}
 /* connections, related panel, close guide */
 #conn{display:grid;gap:6px;margin-top:10px;padding:8px 10px;border:1px solid var(--ac);border-radius:10px;background:color-mix(in srgb,var(--ac) 8%,transparent)}#conn[hidden]{display:none}
 .cth{font-size:12px;color:var(--mut);font-weight:600}.cnr{display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:13px}.cnr button{padding:3px 12px;min-height:0}
@@ -159,13 +167,45 @@ main>*{min-width:0}
 #demoMenu .mh,#demoMenu2 .mh{padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:2px}
 #demoMenu .foot,#demoMenu2 .foot{margin-top:6px}
 .leg span{cursor:pointer}.leg span.hl{font-weight:700;text-decoration:underline}#grpbar{align-items:center;gap:6px}#grpbar button{padding:3px 9px;font-size:12px}.chip.weak{border-style:dashed}
+.chip.raw{border-style:dotted;--c:hsl(275 24% 68%)}.leg span.rw:before{background:hsl(275 24% 68%)}.chip.raw>span:nth-child(2){font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;overflow:hidden;text-overflow:ellipsis;max-width:60ch}.chip.raw{max-width:100%}
+#swbox>summary #svbadge{font-size:11px;font-weight:700;margin-left:6px;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mut);cursor:pointer;user-select:none;-webkit-user-select:none}#swbox>summary #svbadge:hover,#swbox>summary #svbadge:focus-visible{border-color:var(--ac);outline:none}#swbox>summary #svbadge.on{color:var(--k4);border-color:var(--k4)}
+#svtab{display:grid;gap:4px;margin:8px 0}.svr{display:grid;grid-template-columns:auto 1fr minmax(96px,160px);gap:8px;align-items:center;font-size:13px}.svr.off{opacity:.55}
+.svr input[type=text]{width:100%;box-sizing:border-box;padding:4px 8px;font:13px ui-monospace,Menlo,Consolas,monospace}
+#svprev{margin:8px 0;padding:8px 10px;background:var(--bg);border:1px solid var(--line);border-radius:8px;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;height:130px;min-height:60px;max-height:80vh;overflow:auto;resize:vertical}#svprev.big{height:60vh}
+
+/* settings drawer + categories */
+@media(max-width:700px){#sync .l{display:none}#sync .s{display:inline}}
+#cbtn{padding:2px 10px;font-size:19px;line-height:1.3;border-radius:9px}
+#cbk{position:fixed;inset:0;z-index:39;background:#0007}
+#cdrw{position:fixed;top:0;bottom:0;left:0;z-index:40;width:min(380px,92vw);background:var(--panel);border-right:1px solid var(--line);box-shadow:8px 0 28px #0006;display:flex;flex-direction:column;transform:translateX(-102%);visibility:hidden;transition:transform .2s ease,visibility 0s .2s;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+#cdrw.open{transform:none;visibility:visible;transition:transform .2s ease}
+@media(min-width:1600px){#cbk{display:none!important}}
+@media(prefers-reduced-motion:reduce){#cdrw,#cdrw.open{transition:none}}
+.drw-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}
+.drw-body{overflow:auto;padding:12px 14px 24px;flex:1}
+.drw-body section{display:grid;gap:10px}.drw-body h2{margin:0}.drw-body .hint{margin:0;font-size:12.5px;color:var(--mut)}
+#clist{display:grid;gap:6px}
+.cat-item{border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.cat-item.dg{opacity:.45}.cat-item.ovt{box-shadow:0 -2px 0 var(--ac)}.cat-item.ovb{box-shadow:0 2px 0 var(--ac)}
+.cat-row{display:grid;grid-template-columns:20px 32px minmax(0,1fr) auto auto auto;gap:6px;align-items:center;padding:5px 6px}
+.cat-grip{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;color:var(--mut);text-align:center;font-size:17px;line-height:1;padding:8px 0}
+.cat-col{width:30px;height:30px;min-height:0;padding:0;border:1px solid var(--line);border-radius:50%;background:none;cursor:pointer;overflow:hidden}
+.cat-col::-webkit-color-swatch-wrapper{padding:0}.cat-col::-webkit-color-swatch{border:0;border-radius:50%}.cat-col::-moz-color-swatch{border:0;border-radius:50%}
+.drw-body input.cat-name{width:100%;min-width:0;min-height:0;padding:4px 8px}
+.cat-row button{padding:2px 0;width:28px;min-height:28px;font-size:12px;line-height:1}
+.cat-more{padding:8px;display:grid;gap:8px;border-top:1px solid var(--line)}
+.cat-more textarea{min-height:64px;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace}.cat-more .hint{font-size:12px}
+.cat-more .bar button{width:auto;padding:5px 10px}
+.cat-add{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:6px;align-items:center}
+.cat-add .cat-col{width:30px}
+@media(pointer:coarse),(max-width:700px){.cat-row button{width:36px;min-height:36px}.drw-body input.cat-name{min-height:36px}.cat-add input[type=text],.cat-add button{min-height:40px}}
 </style></head><body><main>
-<div class="bar"><h1>FuzzTag <small>ANIMA Prompt Editor</small></h1><span id="status"></span></div>
+<div class="bar"><button type="button" id="cbtn" aria-label="Open settings" aria-expanded="false" aria-controls="cdrw" title="Settings: tag categories">☰</button><h1>FuzzTag <small>ANIMA Prompt Editor</small></h1><span id="status"></span></div>
 <div id="sync" class="wait" role="status" aria-live="polite" title="Checking the Danbooru connection...">Checking tags…</div>
 
 <details class="box" id="guide" open><summary>📖 Guide: what this tool does and how to use it</summary><div class="gin">
 
-<p class="lead">A notepad for writing prompts made of <b>Danbooru tags</b> (for ANIMA, Illustrious and similar models). It suggests real tags while you type, cleans the formatting, and lets you change weight, color, length and order of every tag.</p>
+<p class="lead">A notepad for writing prompts made of <b>Danbooru tags</b> (for ANIMA, Illustrious and similar models, and it also understands SwarmUI syntax). It suggests real tags while you type, cleans the formatting, and lets you change weight, color, length and order of every tag.</p>
 
 <div class="flow">
 <div><em>1</em><b>Type</b><small>2 or more letters of a tag</small></div>
@@ -262,8 +302,9 @@ main>*{min-width:0}
 <div class="rows">
 <div class="r"><div class="a sg"><span class="chip sm" style="--h:200"><span class="c0">blue eyes</span></span><span class="chip sm" style="--h:200"><span class="c1">artist name</span></span><span class="chip sm" style="--h:200"><span class="c3">blue archive</span></span><span class="chip sm" style="--h:200"><span class="c4">hoshino (blue archive)</span></span><span class="chip sm" style="--h:200"><span class="c5">highres</span></span></div>
 <div class="b"><b>Name color</b> = tag type on Danbooru: blue normal, red artist, purple series, green character, orange meta.</div></div>
-<div class="r"><div class="a sg"><span class="chip sm" style="--h:226"><span>long hair</span></span><span class="chip sm" style="--h:252"><span>blue eyes</span></span><span class="chip sm" style="--h:330"><span>white shirt</span></span><span class="chip sm" style="--h:408"><span>thighhighs</span></span></div>
-<div class="b"><b>Border and fill color</b> = the sort group (hair, eyes, top, legwear and so on). The color key under the blocks lists them.</div></div>
+<div class="r"><div class="a sg"><span class="chip sm" style="--h:288.9;--l:60%"><span>long hair</span></span><span class="chip sm" style="--h:306.7;--l:72%"><span>blue eyes</span></span><span class="chip sm" style="--h:53.3;--l:72%"><span>white shirt</span></span><span class="chip sm" style="--h:106.7;--l:72%"><span>thighhighs</span></span></div>
+<div class="b"><b>Border and fill color</b> = the sort group (hair, eyes, top, legwear and so on). Colors follow the sort order around the color wheel, and neighbors alternate between lighter and deeper, so the next group always looks a little different.</div></div>
+<div class="r"><div class="a">Purple <b>dotted</b> block</div><div class="b">A SwarmUI tag such as <code>&lt;lora:…&gt;</code> or <code>&lt;wildcard:…&gt;</code>. It is kept exactly as typed (see the SwarmUI card below).</div></div>
 <div class="r"><div class="a"><span class="chip sm" style="--h:252"><span>blue eyes</span><b>1.2</b></span></div>
 <div class="b"><b>Number</b> = the weight. No number means 1 (normal).</div></div>
 <div class="r"><div class="a"><span class="chip sm unk" style="--h:252"><span>blue eyez</span></span></div>
@@ -300,11 +341,11 @@ main>*{min-width:0}
 
 <div class="gc"><h3>🎨 Groups and sorting</h3>
 <div class="rows">
-<div class="r"><div class="a"><button type="button" tabindex="-1">Sort tags</button></div><div class="b">Orders tags: meta, background, series, count, character, hair, eyes and face, body, headwear, accessories, costume, top, bottom, underwear, legwear and shoes, pose and action, props and toys, memes, then uncategorized. Tags in the same group keep your order. Locked blocks stay where they are.</div></div>
+<div class="r"><div class="a"><button type="button" tabindex="-1">Sort tags</button></div><div class="b">Orders tags: meta, background, series, count, character, hair, eyes and face, expression and gaze, body, headwear, accessories, costume, top, bottom, underwear, legwear and shoes, pose and action, props and toys, memes, then uncategorized. Tags in the same group keep your order. Locked blocks stay where they are.</div></div>
 <div class="r"><div class="a"><button type="button" tabindex="-1">Clean up</button></div><div class="b">Fixes formatting and removes duplicates without changing the order.</div></div>
 <div class="r"><div class="a">Checkboxes</div><div class="b"><b>sort when leaving the box</b> sorts when you click away from the text box. <b>add background if missing</b> adds <code>simple background</code> and the color you pick to the final prompt only.</div></div>
 <div class="r"><div class="a"><button type="button" tabindex="-1">Reset weights</button> <button type="button" tabindex="-1">Clear</button></div><div class="b">Reset weights sets every weight back to 1. Clear removes all tags (Undo brings them back).</div></div>
-<div class="r"><div class="a">Color key</div><div class="b">Under the blocks. Shows how many blocks each group has. Click a group name to highlight its blocks, click again to turn it off.</div></div>
+<div class="r"><div class="a">Color key</div><div class="b">Under the blocks. Lists the groups in sort order, with how many blocks each has. Click a group name to highlight its blocks, click again to turn it off.</div></div>
 <div class="r"><div class="a"><button type="button" tabindex="-1">Guess uncategorized</button></div><div class="b">Researches every gray tag on Danbooru (parent tags, wiki links, wiki text, related tags). A confident guess keeps its normal color. A <b>weak guess</b> has a dashed border, so check it. Nothing is guessed until you press this.</div></div>
 <div class="r"><div class="a">Reset buttons</div><div class="b"><b>Reset manual groups to Auto</b> undoes every group you set by hand. <b>Clear weak guesses</b> forgets only the weak guesses. Both ask first.</div></div>
 </div></div>
@@ -323,19 +364,47 @@ main>*{min-width:0}
 <div class="r"><div class="a"><b>copy as</b></div><div class="b">Copies a variant: with underscores, without weights, or on one line.</div></div>
 <div class="r"><div class="a"><b>History</b></div><div class="b">Restores earlier prompts. Saved a few seconds after you stop editing, and when you copy.</div></div>
 <div class="r"><div class="a"><b>Save .txt / Save .json / Load file</b></div><div class="b">Download the prompt as text, or everything (tags, sentence, negative, snippets) as a file. Load it back later or on another device.</div></div>
+<div class="r"><div class="a">Keyboard shortcuts</div><div class="b"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> copies the final prompt. <kbd>Ctrl</kbd> + <kbd>↑</kbd> / <kbd>↓</kbd> changes the weight of the tag at the cursor. A line break in the tag box counts as a comma, so you can paste a list with one tag per line.</div></div>
 <div class="r"><div class="a">Undo and Redo</div><div class="b">Buttons under the tag box (also <kbd>Ctrl</kbd> + <kbd>Z</kbd> / <kbd>Y</kbd> on a keyboard).</div></div>
 <div class="r"><div class="a">Negative prompt</div><div class="b">Its own box with its own Copy button.</div></div>
 <div class="r"><div class="a">Snippets</div><div class="b">Save the current tags under a name (an outfit, a character). Click the name later to insert them, <b>×</b> removes it.</div></div>
-<div class="r"><div class="a">Autosave</div><div class="b">Your text, snippets, mutes, locks, group choices and block size are kept in this browser.</div></div>
-<div class="r"><div class="a">Warnings</div><div class="b">Red lines under the blocks: duplicates, more than one hair or eye color, weight 0, unknown tags, and clashing pairs such as <code>short hair</code> + <code>long hair</code>, <code>1girl</code> + <code>2girls</code>, <code>barefoot</code> + <code>socks</code> or <code>sitting</code> + <code>standing</code>.</div></div>
+<div class="r"><div class="a">Autosave</div><div class="b">Your text, snippets, mutes, locks, group choices, your categories, SwarmUI variable setup and block size are kept in this browser.</div></div>
+<div class="r"><div class="a">Warnings</div><div class="b">Red lines under the blocks: duplicates, more than one hair or eye color, weight 0, unknown tags, SwarmUI tags that are not closed, a <var:...> nothing defines, a wildcard used twice, an A1111-style <code>{a|b}</code> next to SwarmUI tags, and clashing pairs such as <code>short hair</code> + <code>long hair</code>, <code>1girl</code> + <code>2girls</code>, <code>barefoot</code> + <code>socks</code> or <code>sitting</code> + <code>standing</code>.</div></div>
 </div></div>
 
 <div class="gc"><h3>🖥️ Display</h3>
 <div class="rows">
+<div class="r"><div class="a"><b>Lines</b> button</div><div class="b">Top right of the tag blocks. Shows the blocks in lines like the final prompt (quality and background / count and series / character and looks / outfit / pose). A new line starts whenever the next block belongs to another line, so your order never changes. Press <b>Sort tags</b> to make the lines tidy. Remembered.</div></div>
 <div class="r"><div class="a">Block size <b>−</b> / <b>+</b></div><div class="b">Top right of the tag blocks. Changes how big the blocks are (70% to 180%). Remembered.</div></div>
 <div class="r"><div class="a">Button tips</div><div class="b">On a computer, hold the mouse over a button for a short explanation. Touch screens do not show these tips, so this guide is the reference.</div></div>
-<div class="r"><div class="a">Close guide</div><div class="b">The round button at the bottom folds the guide. Open it again from the 📖 title.</div></div>
 </div></div>
+
+<div class="gc"><h3>🧩 SwarmUI syntax and variables</h3>
+<p>Using SwarmUI? Special tags like <code>&lt;lora:name:0.8&gt;</code>, <code>&lt;wildcard:name&gt;</code>, <code>&lt;var:name&gt;</code>, <code>&lt;random:a, b&gt;</code> and <code>&lt;segment:face,0.6,0.5&gt;</code> are kept <b>exactly as you typed them</b>. Braces such as <code>{a|b}</code> (A1111 style) are left alone too, but SwarmUI only reads them with an extension. Use <code>&lt;random:a|b&gt;</code> instead; the block menu has a Convert button.</p>
+<div class="rows">
+<div class="r"><div class="a">Purple dotted block</div><div class="b">A SwarmUI tag. It is never changed (no lowercase, no underscore fix), never checked against Danbooru, never moved by Sort, and has no weight. Right-click or tap it for Mute, Delete and Sort group.</div></div>
+<div class="r"><div class="a">Insert SwarmUI tag</div><div class="b">A drop-down in the “SwarmUI variables” box. It adds a ready-made tag with the name part selected so you can type over it. Handy on a phone, where <code>&lt;</code> is hard to type.</div></div>
+<div class="r"><div class="a">The <b>off</b> / <b>ON</b> badge</div><div class="b">On the title of the box. It shows whether setvar export is on. Hover it for a short explanation, and click it to switch it on or off without opening the box.</div></div>
+<div class="r"><div class="a">Use setvar in the final prompt</div><div class="b">Wraps each ticked group in a variable, for example <code>&lt;setvar[hair]:white hair, short hair&gt;</code>. The tags still appear in the main prompt. Segments (face, eye or hand fix) call them back with <code>&lt;var:hair&gt;</code>, and the text is identical everywhere.</div></div>
+<div class="r"><div class="a">Why use it</div><div class="b">If you write the same wildcard in the main prompt and in a segment, SwarmUI rolls it twice and can give two different results. A variable is rolled once.</div></div>
+<div class="r"><div class="a">Variable names</div><div class="b">Type your own name for each group in the list (letters, numbers, <code>_</code> and <code>-</code>). Two groups with the same name become one variable. An empty name or an unticked group is not exported. The list shows only groups you are using. Expression and gaze tags (smile, closed mouth, looking at viewer) have their own group, so they stay out of the identity variables, and they are unticked by default. By default only hair, eyes and face, body and headwear are ticked.</div></div>
+<div class="r"><div class="a">Wildcard inside a variable</div><div class="b">Right-click the wildcard block, choose a <b>Sort group</b>, and it goes inside that group's variable, like <code>&lt;setvar[expr]:&lt;wildcard:expressions&gt;&gt;</code>. For a variable of its own, pick a group that has no other tags and give that group your name.</div></div>
+<div class="r"><div class="a">Stored only</div><div class="b">“tags in main prompt: stored only” writes <code>&lt;setvar[name,false]:…&gt;</code>. The text is saved but not written in the main prompt. Add <code>&lt;var:name&gt;</code> where you want it.</div></div>
+<div class="r"><div class="a">Segments, regions, objects</div><div class="b">Everything from the first <code>&lt;segment:…&gt;</code>, <code>&lt;region:…&gt;</code> or <code>&lt;object:…&gt;</code> block onward stays in the order you typed and goes <b>last</b>, after your sentence. SwarmUI reads the text after those tags as their own prompt.</div></div>
+<div class="r"><div class="a">Preview size</div><div class="b">Drag the bottom corner of the preview to make it taller, or press <b>Expand preview</b> (works on touch screens too).</div></div>
+<div class="r"><div class="a">Copy setvar block / var calls</div><div class="b">Buttons in the box (and in “copy as”) copy only the <code>&lt;setvar&gt;</code> lines, or a list like <code>&lt;var:hair&gt;, &lt;var:eyes&gt;</code>.</div></div>
+<div class="r"><div class="a">Warnings</div><div class="b">You are told about a tag that is not closed, a <code>&lt;var:…&gt;</code> that nothing defines, or the same wildcard used twice.</div></div>
+</div>
+<div class="note">The setup is remembered on this device and is included in Copy backup and Save .json.</div></div>
+
+<div class="gc"><h3>🎨 Your own categories</h3>
+<p>Tap <b>☰</b> at the top left to open Settings. On a wide screen it sits beside the page, on a phone it slides over it.</p>
+<div class="rows">
+<div class="r"><div class="a">Rename and recolor</div><div class="b">Type a new name, or tap the colored dot to pick a color. Blocks and the legend change right away.</div></div>
+<div class="r"><div class="a">Reorder</div><div class="b">Drag the ⠿ handle, or use ▲ ▼. Sort tags uses this order, and the Lines view starts a new line at the same places as before.</div></div>
+<div class="r"><div class="a">Add your own</div><div class="b">Type a name at the bottom and tap Add. Open its <b>⋯</b> panel and list the tags that belong there, separated by commas. You can also put a single tag in any category from its menu (Sort group), and that choice always wins.</div></div>
+<div class="r"><div class="a">Reset</div><div class="b">Each category has a reset button in its ⋯ panel. “Reset order” and “Reset all categories” are at the bottom.</div></div>
+</div><div class="note">Saved on this device and included in Copy backup and Save .json.</div></div>
 
 <div class="gclose"><button type="button" id="gclose">▲ Close guide</button></div></div></details>
 
@@ -352,39 +421,151 @@ main>*{min-width:0}
 <select id="bgsel"><option>gradient background</option><option>white background</option><option>pink background</option><option>blue background</option><option>purple background</option><option>grey background</option></select>
 </div></div>
 
-<div class="box"><div class="bh"><h2>Tag blocks</h2><div class="rz"><button type="button" id="selb" title="Select several blocks">Select</button><button type="button" id="rzm" title="Smaller blocks" aria-label="Smaller blocks">−</button><span id="rzv">100%</span><button type="button" id="rzp" title="Bigger blocks" aria-label="Bigger blocks">+</button></div></div><p class="hint" id="chiphint" style="margin:0 0 8px"></p>
+<div class="box"><div class="bh"><h2>Tag blocks</h2><div class="rz"><button type="button" id="lnb" aria-pressed="false" title="Show the blocks in lines like the final prompt: a new line starts whenever the next block belongs to another line (quality and background / count and series / character and looks / outfit / pose). Blocks keep their order.">Lines</button><button type="button" id="selb" title="Select several blocks">Select</button><button type="button" id="rzm" title="Smaller blocks" aria-label="Smaller blocks">−</button><span id="rzv">100%</span><button type="button" id="rzp" title="Bigger blocks" aria-label="Bigger blocks">+</button></div></div><p class="hint" id="chiphint" style="margin:0 0 8px"></p>
 <div id="chips"></div><div class="leg" id="leg" title="Click a group to highlight it"></div><div class="bar" id="grpbar" style="margin-top:6px"><button id="gres" title="Set every group you chose by hand back to Auto">Reset manual groups to Auto</button><button id="gclr" title="Forget only the weak (dashed) guesses. Confident guesses stay.">Clear guesses</button><button id="ggo" title="Research grey tags and redo weak guesses. Nothing is guessed until you press this.">Guess uncategorized</button></div><div id="warn"></div><div id="conn" hidden></div></div>
 
 <div class="box"><h2>Natural language (ANIMA hybrid)</h2><textarea id="nl" style="min-height:60px" placeholder="A cheerful girl standing on a sunlit balcony ..."></textarea>
 <div class="bar" style="margin-top:8px"><label>order <select id="ord"><option value="t">tags, then sentence</option><option value="n">sentence, then tags</option></select></label></div></div>
 
+<details class="box" id="swbox"><summary>🧩 SwarmUI variables <span id="svbadge" role="switch" tabindex="0" aria-checked="false">off</span></summary>
+<p class="hint" style="margin:8px 0">Turns your tag groups into <code>&lt;setvar&gt;</code> variables. A wildcard is then rolled once, and every <code>&lt;var:name&gt;</code> (in a face, eye or hand fix segment) gets the exact same text.</p>
+<div class="bar"><label title="Wrap each ticked group in a setvar block in the final prompt"><input type="checkbox" id="svon"> use setvar in the final prompt</label><label>tags in main prompt <select id="svem" title="Shown: the tags still appear in the main prompt. Stored only: the text is saved for &lt;var:name&gt; but not written in the main prompt."><option value="y">shown (default)</option><option value="n">stored only</option></select></label></div>
+<div id="svtab"></div>
+<pre id="svprev"></pre>
+<div class="bar"><button type="button" id="svexp" title="Make the preview taller or shorter. You can also drag its bottom corner.">Expand preview</button><button type="button" id="svcopy" title="Copy only the setvar lines">Copy setvar block</button><button type="button" id="svvars" title="Copy a list like &lt;var:hair&gt;, &lt;var:eyes&gt; for your segments">Copy var calls</button><button type="button" id="svreset" title="Back to the default names and groups">Reset names</button>
+<label title="Adds a ready-made SwarmUI tag at the end of the tag box with its name part selected">insert <select id="svins"><option value="">SwarmUI tag…</option><option value="lora">&lt;lora:name:1&gt;</option><option value="wildcard">&lt;wildcard:name&gt;</option><option value="var">&lt;var:name&gt;</option><option value="random">&lt;random:a, b&gt;</option><option value="choice">&lt;random:a|b&gt;</option><option value="rrange">&lt;random[1-2,]:a, b&gt;</option><option value="alt">&lt;alternate:a, b&gt;</option><option value="fromto">&lt;fromto[0.5]:before, after&gt;</option><option value="segment">&lt;segment:face,0.6,0.5&gt;</option><option value="brk">&lt;break&gt;</option><option value="comment">&lt;comment:note&gt;</option></select></label></div>
+</details>
+
 <div class="box"><div class="bar"><h2 style="margin:0">Final prompt</h2><span id="cnt"></span></div><pre id="out" style="margin-top:6px"></pre><div class="bar" style="margin-top:8px"><label>layout <select id="lay"><option value="l">grouped lines</option><option value="o">one line</option></select></label><button class="p" id="copy">Copy prompt</button></div>
-<div class="bar" style="margin-top:8px"><button id="hbtn" type="button">History</button><button id="sv1" type="button">Save .txt</button><button id="sv2" type="button">Save .json</button><button id="ldb" type="button">Load file</button><input type="file" id="ldf" accept=".txt,.json,text/plain,application/json" hidden><label>copy as <select id="cas"><option value="">choose…</option><option value="u">underscores</option><option value="w">no weights</option><option value="o">one line</option></select></label></div></div>
+<div class="bar" style="margin-top:8px"><button id="hbtn" type="button">History</button><button id="sv1" type="button">Save .txt</button><button id="sv2" type="button">Save .json</button><button id="ldb" type="button">Load file</button><input type="file" id="ldf" accept=".txt,.json,text/plain,application/json" hidden><label>copy as <select id="cas"><option value="">choose…</option><option value="u">underscores</option><option value="w">no weights</option><option value="o">one line</option><option value="sv">SwarmUI setvar block</option><option value="vc">SwarmUI var calls</option></select></label></div></div>
 
 <div class="box"><h2>Negative prompt</h2><textarea id="neg" style="min-height:60px"></textarea><div class="bar" style="margin-top:8px"><button id="copyn">Copy negative</button></div></div>
 
 <div class="box"><h2>Snippets and backup</h2><div class="bar"><input type="text" id="sname" placeholder="name"><button id="ssave">Save current tags</button></div><div class="bar" id="snips" style="margin-top:8px"></div>
 <div class="bar" style="margin-top:10px"><button id="bk">Copy backup</button><button id="rs">Restore backup</button><span class="hint">Backup moves your boxes and snippets to another browser or device.</span></div></div>
 </main>
+<footer id="ftr">FuzzTag v1.1.0 · <a href="https://github.com/G3rmaniumFuzzFace/fuzztag" target="_blank" rel="noopener">GitHub</a> · <a href="https://github.com/G3rmaniumFuzzFace/fuzztag/issues" target="_blank" rel="noopener">Report a bug</a> · <a href="https://github.com/G3rmaniumFuzzFace/fuzztag/blob/main/CHANGELOG.md" target="_blank" rel="noopener">What's new</a></footer>
+<div id="cbk" hidden></div>
+<aside id="cdrw" role="dialog" aria-label="Settings" aria-hidden="true">
+<div class="drw-head"><b>Settings</b><button type="button" id="cclose" aria-label="Close settings">✕</button></div>
+<div class="drw-body"><section><h2>Tag categories</h2>
+<p class="hint">Rename, recolor and reorder the groups. Drag ⠿ or use ▲ ▼. Sort tags and the Lines view follow this order. Saved on this device.</p>
+<div id="clist"></div>
+<div class="cat-add"><input type="color" id="ccol" value="#4fc3a1" aria-label="Color of the new category"><input type="text" id="cname" maxlength="30" placeholder="New category name" aria-label="New category name" autocomplete="off" spellcheck="false"><button type="button" id="cadd" class="p">Add</button></div>
+<div class="bar"><button type="button" id="cord">Reset order</button><button type="button" id="crall">Reset all categories</button></div>
+<p class="hint">Uncategorized and SwarmUI syntax are fixed and always sit last.</p>
+</section></div></aside>
+
 <div id="dock"><button id="undo2">↶ Undo</button><button class="p" id="copy2">Copy prompt</button></div>
 <div id="back"></div><div id="menu"></div>
 <script>
 const $=s=>document.querySelector(s),raw=$('#raw'),ac=$('#ac'),ch=$('#chips'),menu=$('#menu'),back=$('#back');
 const coarse=()=>matchMedia('(pointer:coarse)').matches,sheet=()=>coarse()||matchMedia('(max-width:700px)').matches;
 const fmt=w=>String(+(+w).toFixed(2));
-const GN=['meta / quality','background','series','count','character','hair','eyes / face','headwear','accessories','top','bottom','underwear','legwear / shoes','pose / action','body','costume / cosplay','props / objects / toys','uncategorized','meme / reference'];
-const ORD=[0,1,2,3,4,5,6,14,7,8,15,9,10,11,12,13,16,18],HUE=g=>{const r=ORD.indexOf(g);return r<0?0:(200+r*21)%360},LT=g=>ORD.indexOf(g)%2?'50%':'68%';
-const RK=g=>g===14?6.5:g===15?8.5:g===16?13.5:g===17?99:g===18?13.8:g;
-const LINES=[[0,1],[2,3],[4,5,6,14],[7,8,9,10,11,12,15],[13,16,18,17]];
+const GN=['meta / quality','background','series','count','character','hair','eyes / face','headwear','accessories','top','bottom','underwear','legwear / shoes','pose / action','body','costume / cosplay','props / objects / toys','uncategorized','concept / meme / reference','SwarmUI syntax','expression / gaze'];
+const LORD=[0,1,2,3,4,5,6,20,14,7,8,15,9,10,11,12,13,16,18,17,19],ORD=LORD.slice(0,19),HUE0=g=>{if(g===19)return 285;const r=ORD.indexOf(g);return r<0?0:Math.round(((200+r*320/(ORD.length-1))%360)*10)/10},LT0=g=>{const r=ORD.indexOf(g);return r<0?'62%':['72%','48%','60%'][r%3]};
+const COLS={},HUE=g=>COLS[g]?COLS[g][0]:HUE0(g),LT=g=>COLS[g]?COLS[g][2]+'%':LT0(g),SAT=g=>COLS[g]?COLS[g][1]+'%':'72%';
+const RK=g=>{if(g===17)return 99;if(g===19)return 98;const r=LORD.indexOf(g);return r<0?97:r};
+const LINES=[[],[],[],[],[]],BRK=new Set([1,3,14,12]);
+/* categories: rename, recolor, reorder, add your own (saved on this device) */
+const GN0=GN.slice(),DEDIT=LORD.slice(0,19),CK='ape-cat',CT=new Map(),PAL=['#4fc3a1','#e5a23a','#c77dff','#ff7a8a','#6fb1ff','#9bd45a','#f08fc0','#d8c35a'];
+const catBase=()=>({order:null,names:{},cols:{},custom:[],tags:{},next:21});
+const hexOK=v=>typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v);
+const tkao=t=>t.includes('_')&&t.length<=12&&!/\s/.test(t)&&!/[a-z]{2}/i.test(t);
+const tnorm=t=>{let u=String(t).trim().toLowerCase().replace(/\\([()])/g,'$1');if(!tkao(u))u=u.replace(/_/g,' ').replace(/\s+/g,' ');return u};
+function hex2hsl(h){const r=parseInt(h.slice(1,3),16)/255,g=parseInt(h.slice(3,5),16)/255,b=parseInt(h.slice(5,7),16)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn;let H=0,S=0;if(d){S=d/(1-Math.abs(2*l-1));H=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;H*=60}return[Math.round(H*10)/10,Math.round(S*1000)/10,Math.round(l*1000)/10]}
+function hsl2hex(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));return'#'+[f(0),f(8),f(4)].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('')}
+function catClean(o){const c=catBase();if(!o||typeof o!=='object')return c;
+ const nm=v=>typeof v==='string'?v.replace(/\s+/g,' ').trim().slice(0,30):'';
+ if(o.names&&typeof o.names==='object')for(const k in o.names){const i=+k,n=nm(o.names[k]);if(DEDIT.includes(i)&&n)c.names[i]=n}
+ if(Array.isArray(o.custom))o.custom.forEach(x=>{if(x&&Number.isInteger(x.id)&&x.id>=21&&x.id<1000&&nm(x.name)&&c.custom.length<40&&!c.custom.some(y=>y.id===x.id))c.custom.push({id:x.id,name:nm(x.name)})});
+ const ok=i=>DEDIT.includes(i)||c.custom.some(y=>y.id===i);
+ if(o.cols&&typeof o.cols==='object')for(const k in o.cols){const i=+k;if(ok(i)&&hexOK(o.cols[k]))c.cols[i]=o.cols[k].toLowerCase()}
+ c.custom.forEach(x=>{if(!c.cols[x.id])c.cols[x.id]=PAL[x.id%PAL.length]});
+ if(o.tags&&typeof o.tags==='object')for(const k in o.tags){const i=+k;if(ok(i)&&Array.isArray(o.tags[k])){const l=[...new Set(o.tags[k].filter(x=>typeof x==='string').map(tnorm).filter(Boolean))].slice(0,500);if(l.length)c.tags[i]=l}}
+ if(Array.isArray(o.order))c.order=o.order.filter((i,k)=>Number.isInteger(i)&&ok(i)&&o.order.indexOf(i)===k);
+ c.next=Math.max(21,Number.isInteger(o.next)?o.next:21,...c.custom.map(x=>x.id+1));return c}
+let CAT=catBase();try{CAT=catClean(JSON.parse(localStorage.getItem(CK)||'{}'))}catch(e){}
+function catApply(){GN.length=0;GN0.forEach(n=>GN.push(n));for(const k in CAT.names)GN[k]=CAT.names[k];
+ const top=Math.max(20,...CAT.custom.map(x=>x.id));for(let i=21;i<=top;i++)GN[i]='';CAT.custom.forEach(x=>{GN[x.id]=x.name});
+ const ids=[...DEDIT,...CAT.custom.map(x=>x.id)],ord=(CAT.order||[]).filter(i=>ids.includes(i));ids.forEach(i=>{if(!ord.includes(i))ord.push(i)});
+ CAT.order=ord;LORD.length=0;LORD.push(...ord,17,19);
+ for(const k in COLS)delete COLS[k];for(const k in CAT.cols)COLS[k]=hex2hsl(CAT.cols[k]);
+ CT.clear();for(const k in CAT.tags)CAT.tags[k].forEach(t=>CT.set(t,+k));
+ LINES.forEach(l=>l.length=0);let cur=0;ord.forEach(g=>{LINES[cur].push(g);if(BRK.has(g)&&cur<LINES.length-1)cur++});LINES[LINES.length-1].push(17)}
+catApply();
+/* SwarmUI / dynamic-prompt syntax is kept exactly as typed */
+const RAWRE=/^(?:<(?:[a-z][a-z0-9_]*(?:\[[^\]]*\])?:|(?:break|base|refiner|video|videoswap|trigger)>)|\{|__[^\s_,][^\s,]*__$|BREAK$)/i;
+const isRaw=t=>RAWRE.test(t);
+const POS=/^<(?:segment|region|object|base|refiner|video|videoswap|extend)\b/i;
+const cut=a=>{const i=a.findIndex(x=>POS.test(x.t));return i<0?a:a.slice(0,i)};
+function rawEnd(s,i){const c=s[i];
+ if(c==='<'){if(!RAWRE.test(s.slice(i,i+200)))return -1;let d=0;for(let j=i;j<s.length;j++){const h=s[j];if(h==='<'&&/[a-z]/i.test(s[j+1]||''))d++;else if(h==='>'){d--;if(d<=0)return j+1}}return -1}
+ if(c==='{'){let d=0;for(let j=i;j<s.length;j++){if(s[j]==='{')d++;else if(s[j]==='}'){d--;if(d===0)return j+1}}return -1}
+ return -1}
+function scan(s){const P=[];let d=0,st=0,open=false,empty=true;
+ for(let i=0;i<s.length;i++){const c=s[i];
+  if(c==='\\'){i++;empty=false;continue}
+  if(!d&&empty&&(c==='<'||c==='{')){const n=rawEnd(s,i);if(n>0){i=n-1;empty=false;continue}if(c==='{'||RAWRE.test(s.slice(i,i+200)))open=true}
+  if(c==='('&&(d>0||empty))d++;else if(c===')'&&d>0)d--;
+  if((c===','||c==='\n')&&!d){P.push([st,i]);st=i+1;empty=true}else if(!/\s/.test(c))empty=false}
+ P.push([st,s.length]);return{P,open}}
 const META=/^(masterpiece|best quality|highres|absurdres|newest|recent|safe|sensitive|nsfw|explicit|year \d+|score \d.*|source .*|.*commentary.*|translated|translation request|bad (pixiv )?id|artist name|signature|twitter username|character name|copyright name|english text|commission|official art|dated|watermark|web address|.*\(medium\)|blurry|greyscale|monochrome|comic|chibi|multiple views|virtual youtuber|cover|cover page|turnaround|reference sheet|lineart|spot color|sepia|sketch|4koma|2koma|1koma|character profile|collage|flat color|anime coloring|limited palette|muted color|pale color|high contrast|retro artstyle|pixel art|manga|traditional media|photorealistic|realistic|3d|.*censor.*|decensored)$/;
-const RULES=[[18,/\(meme\)$|\bmemes?\b/],[13,/\bsex\b/],[6,/^(tsundere|yandere|kuudere|dandere|deredere|himedere|mixed signals)$/],[13,/bdsm|femdom|humiliation|sadism|masochism|spanking|whipping|strangling|stepped on|ryona|mind break|^pain$|struggling/],[1,/valentine|new year|birthday|hanami|tanabata|halloween|christmas/],[16,/^(gift|present|trophy|banner|signboard|trash can|bicycle|car|motorcycle|bus|boat|airplane|robot|mecha)$|\bvehicle\b/],[16,/butt ?plug|anal (plug|beads)|dildo|vibrator|sex toy|bondage|\brope\b|shibari|handcuffs|\bgag\b|\bwhip\b|\bleash\b|blindfold|riding crop|strap-on|cock ring|nipple clamps|restrained|\bbound\b|pacifier|\bcandle\b|tail plug|\btoy\b/],[3,/^(\d+\+?(girls?|boys?|others?)|solo|multiple (girls|boys|others)|no humans|solo focus|male focus|hetero|yuri|yaoi|bisexual (female|male)|couple)$/],
-[14,/clitoral hood|clitoral|knee ?cap|pointy ears|elf ears|human ears/],
-[13,/^covering /],
-[5,/crown braid|hair (over|between|behind|intakes|flaps)|blunt ends|(one|two) side up|half updo|sidecut|\bhair (down|up)\b|ponytails?|twin drills/],
-[7,/ear fluff|forehead protector|headpiece|hair (ornament|ribbon|bow|flower|band|tie|scrunchie|stick|pin|net)|hairclip|hairband|hairpin|\bhat\b|headband|headwear|headphones|crown|tiara|veil|bonnet|beret|\bhood\b|\bcap\b|\bears\b|horns|halo|headdress/],
-[13,/^(sex|vaginal|anal|oral|fellatio|cunnilingus|paizuri|handjob|footjob|masturbation|fingering|clothed sex|group sex|threesome|after (sex|anal|vaginal|fellatio)|missionary|doggystyle|cowgirl position|reverse cowgirl position|girl on top|standing sex|mating press|prone bone|cum\b|facial$|bukkake|orgasm|ahegao|ejaculation|female ejaculation|squirting|cumshot|creampie)/],
-[14,/censor|penis|testicles|erection|foreskin|precum|veiny|\banus\b|bare (legs|arms|back|feet)|skindentation|nipple|cleavage|collarbone|sideboob|underboob|midriff|thigh gap|wide hips|breasts|flat chest|\bass\b|navel|thighs|\babs\b|muscular|\bskin\b|tanlines|\btan\b|hips|waist|nipples|areolae|pussy|penis|anus|armpits?|stomach|belly|tattoo|freckles|\bmole\b|\bscar\b|curvy|slender|skinny|plump|petite|mature|milf|vulva|clitoris|cleft of venus|cameltoe|\bmons\b|labia|vagina|uterus|womb|\bcrotch\b|groin|pubic|\bbreasts?\b(?! pocket)|boob|areola|bodypaint|body hair|\bflashing\b|shaft look|^(feet|foot|toes?|soles?|toenails?|ankles?|calves|kneepits|nape|fur|foot focus)$/],
-[15,/cosplay|costume|bunnysuit|playboy bunny|bunny girl|race queen|cheerleader|magical girl|kigurumi|santa|\bmiko\b|\bnurse\b|police|pirate|waitress|idol|tangzhuang|harem|hanfu|geisha|ninja|\bnun\b|witch|vampire|dancer|samurai|heian|junihitoe|shrine maiden|gothic lolita|lolita fashion/],
+const RULES=[
+  [18,/[\s!]*\((meme|phrase)\)$|\bmemes?\b/i],
+  [16,/\(object\)$|^(ice cream|teacup|clock|ship|fox|dragon|horse|wolf)$/],
+  [13,/^(hair (flip|tuck(ing)?)|adjusting (hair|clothes|eyewear|headwear|gloves|legwear|swimsuit|skirt|panties|bra)|undressing|dressing|top-down bottom-up|playing instrument|phone call|spooning|hand to mouth|finger to mouth|wardrobe malfunction|panty peek|pantyshot|head ?pat|thumbs up|fist pump|shushing|drawing|gaming|texting|shopping|jack-o' challenge|wariza|indian style|female orgasm|assertive female|reverse cowgirl|sixty-nine|suspended congress|full nelson|cumdrip|overflow|arms bound apart|pole grind|crotch rub|(table|pillow|dry|leg|floor|wall) humping)$/],
+  [9,/^(sweater|track suit|qipao|bodystocking|catsuit)$/],
+  [10,/^(yoga pants|track pants|sweatpants)$/],
+  [12,/\bmary janes?$|\bleg warmers$/],
+  [15,/^(maid|soldier|pilot|chef|ghost|zombie|android|cyborg)$/],
+  [7,/^(helmet|visor)$/],
+  [8,/^gauntlets$/],
+  [6,/^afterglow$/],
+  [14,/^(birthmark|genderswap( \(.*\))?|cuntboy|sweaty armpits)$|\bfutanari$/],
+  [0,/^(sound effects|(chinese|japanese|korean|russian|spanish|thai) text|border|letterboxed|pillarboxed|windowboxed)$/],
+  [1,/^(cherry blossoms|curtains|torii|alley|cyberpunk|fantasy|gothic|lens flare|backlighting|rim light|light rays|shadow|glowing|fire|wind|magic|magic circle|aura|particles|smoke|dust|debris|explosion)$/],
+  [16,/^(polearm|handgun|brass knuckles|flail|nunchaku|mace|bomb|war hammer|windfire wheel|boomerang|crossbow|cannon|chakram|grenade launcher|flamethrower|rocket launcher|shuriken|wire manipulation|revolver|ammunition|ammunition pouch|derringer|flintlock|antique firearm|bandolier|break action|handgun cartridge|folded stock|locked slide|holstered|cable|thread|yarn|string|shimenawa|kouhaku nawa|swing|pig|fb glauberyt|mp18|vp m1915|b&t mp9|colt 9mm smg|famae saf|emp 44|daewoo (xk9|k7)|cz scorpion evo 3|blyskawica smg|american-180|arsenal shipka|carl gustaf m\/45|cs\/ls06|danuvia 43m|erma emp)$|^beretta\b|\(weapon\)$/i],
+  [13,/\b(kabedon|yukadon|stomping|backbend|frontbend|triplefold|quadfold|ruppelbend|chest stand|folded back|bent back|curled up|slouching|hunched over|contortion|gymnastics|yoga|flexible|dogeza|zarei|curtsy|apologizing|tachi-e|princess carry|face-to-face|heads together|nuzzle|pinned|pushing down|tiptoes|oversplit|heel (up|stretch)|foot up heel up|heel drop split|high kick|imminent kick|stepping on|fetal position|under covers|elbow on thigh|balancing|aiming|firing|reloading|pet play|kinbaku|rappelling|pigeon-toed|raised fist|clutching chest|two-handed|dual wielding|paizuri|(pussy|belly|butt|pec|tail)job|frottage|tribadism|naizuri|dovefucking|symmetrical docking|anilingus|irrumatio|dry humping)\b/i],
+  [9,/^(telogreika|pelisse|sukajan|windbreaker|turtleneck)$/i],
+  [10,/^buruma$/i],
+  [12,/\bkneehighs?$/i],
+  [8,/^(bridal gauntlets|tongue (piercing|chain))$/i],
+  [15,/\bfashion$/i],
+  [14,/^(?!cum)(.*\b)?(pectorals?|pecs)\b|^pectoral grab$|^(dimples of venus|cinderella bust|gaping|body modification|feet only)$/i],
+  [0,/^(motion blur|afterimage)$/i],
+  [1,/^(pier|treehouse)$/i],
+  [20,/^sobbing$/i],
+  [18,/^(insult|discrimination|ableism|islamophobia|antisemitism|homophobia|transphobia|racism|fake slur|verbal degradation|taunting|come at me bro|insulting viewer|profanity)$|\(profanity\)$/i],
+  [16,/\bflag$|^lgbt pride$|^(\+{2,}|\^{2,}|shout lines|notice lines|squeaks?|counter|hose|shower head|onahole|sybian)$/i],
+  [3,/^(twins|brothers|sisters|siblings|other focus)$/i],
+  [14,/^(sex reassignment surgery|giant|giantess|giant (male|female)|implied futanari|three sizes|manly|toned|manlification|bara|tomboy|girly boy|trap|reverse trap|ambiguous gender)$/i],
+  [13,/^(rape|whisking|birching|humping|tailjob|pegging|trapped|on counter|breeding mount)$|^auto(cunnilingus|paizuri|fellatio)$/i],
+  [20,/^(mocking|yandere trance)$/i],
+  [18,/^(fabulous|okawaii koto|femme fatale|otaku|hikikomori|neet|pedophile|drag queen|bishounen|power bottom|josou seme|reversible couple|futasub)$/i],
+  [15,/^(elf|goblin|vulcan|dragon girl|orc|ogre|troll|dwarf|ouji fashion|victorian)$/i],
+  [1,/^(building|convention)$/i],
+  [5,/^receding hairline$/i],
+  [3,/^(male|female|futa|futanari|other|trap|girl|boy|dickgirl|newhalf|crossdresser) (on|with) (male|female|futa|futanari|other|trap|girl|boy|dickgirl|newhalf|crossdresser)$/i],
+  [13,/\b(threesome|foursome)$/i],
+  [20,/^(looking\b.*|eye contact|.*\bsmile|smirk|smug|grin|.*\bblush|blush.*|embarrassed|flustered|nervous|.*\bmouth|parted lips|.*\blips|tongue.*|fang.*|.*\bteeth|.*\btears|crying|angry|annoyed|sad|happy|surprised|expressionless|frown|pout|serious|sleepy|tired|calm|shy|confused|scowl|wink|one eye closed|closed eyes|half-closed eyes|narrowed eyes|wide-eyed|ahegao|drool(ing)?|saliva|sweat.*|heart-shaped pupils|furrowed brow|glaring|laughing|scream(ing)?|shouting|determined|worried|scared|dazed|panting|heavy breathing|moaning|torogao|trembling|giggling|whimper(ing)?|gasping|sigh|yawning|rolling eyes|naughty face|seductive|tsundere|yandere|kuudere|dandere|deredere|himedere|mixed signals|[:;][a-z0-9<>()]{1,2}|>_<|\^_\^|o_o)$/i],
+  [13,/\bsex\b(?! toys?)/i],
+  [6,/^(tsundere|yandere|kuudere|dandere|deredere|himedere|mixed signals)$/i],
+  [13,/bdsm|femdom|humiliation|sadism|masochism|spanking|whipping|strangling|stepped on|ryona|mind break|^pain$|struggling|prostate milking|ageplay|toddlercon|kodomo doushi/i],
+  [1,/valentine|new year|birthday|hanami|tanabata|halloween|christmas/i],
+  [16,/^(gift|present|trophy|banner|signboard|trash can|bicycle|car|motorcycle|bus|boat|airplane|robot|mecha)$|\bvehicle\b/i],
+  [16,/butt ?plug|anal (plug|beads)|dildo|vibrator|sex toy|bondage|\brope\b|shibari|handcuffs|\bgag\b|\bwhip\b|\bleash\b|blindfold|riding crop|strap-on|cock ring|nipple clamps|restrained|\bbound\b|pacifier|\bcandle\b|tail plug|\btoy\b|flogger|cat o' nine tails/i],
+  [3,/^(\d+\+?(girls?|boys?|others?)|solo|multiple (girls|boys|others)|no humans|solo focus|male focus|hetero|yuri|yaoi|bisexual (female|male)|couple)$/i],
+  [18,/\b(onee-shota|onii-shota|onee-loli|mesugaki|osugaki|lolibaba|shotajiji|lolidom|smalldom|shotadom|age difference|size difference|height difference|age comparison)\b/i],
+  [14,/\b(gender transition\w*|estrogen|testosterone|feminization|gender dysphoria|hormone replacement therapy|transgender symbol|genderswapped|transgender flag)\b/i],
+  [14,/^(old|old (man|woman)|aged (up|down)|androgynous|middle-aged|elderly)$/i],
+  [14,/clitoral hood|clitoral|knee ?cap|pointy ears|elf ears|human ears/i],
+  [13,/^covering /i],
+  [5,/^(bald|balding)$|crown braid|hair (over|between|behind|intakes|flaps)|blunt ends|(one|two) side up|half updo|sidecut|\bhair (down|up)\b|ponytails?|twin drills/i],
+  [7,/ear fluff|forehead protector|headpiece|hair (ornament|ribbon|bow|flower|band|tie|scrunchie|stick|pin|net)|hairclip|hairband|hairpin|\bhat\b|headband|headwear|headphones|crown|tiara|veil|bonnet|beret|\bhood\b|\bcap\b|\bears\b|horns|halo|headdress/i],
+  [13,/^(sex|vaginal|anal|oral|fellatio|cunnilingus|paizuri|handjob|footjob|masturbation|fingering|clothed sex|group sex|threesome|after (sex|anal|vaginal|fellatio)|missionary|doggystyle|cowgirl position|reverse cowgirl position|girl on top|standing sex|mating press|prone bone|cum\b|facial$|bukkake|orgasm|ahegao|ejaculation|female ejaculation|squirting|cumshot|creampie)/i],
+  [14,/censor|penis|testicles|erection|foreskin|precum|veiny|\banus\b|bare (legs|arms|back|feet)|skindentation|nipple|cleavage|collarbone|sideboob|underboob|midriff|thigh gap|wide hips|breasts|flat chest|\bass\b|navel|thighs|\babs\b|muscular|\bskin\b|tanlines|\btan\b|hips|waist|nipples|areolae|pussy|penis|anus|armpits?|stomach|belly|tattoo|freckles|\bmole\b|\bscar\b|curvy|slender|skinny|plump|petite|mature|milf|vulva|clitoris|cleft of venus|cameltoe|\bmons\b|labia|vagina|uterus|womb|\bcrotch\b|groin|pubic|\bbreasts?\b(?! pocket)|boob|areola|bodypaint|body hair|\bflashing\b|shaft look|^(feet|foot|toes?|soles?|toenails?|ankles?|calves|kneepits|nape|fur|foot focus)$/i],
+  [15,/cosplay|costume|bunnysuit|playboy bunny|bunny girl|race queen|cheerleader|magical girl|kigurumi|santa|\bmiko\b|\bnurse\b|police|pirate|waitress|idol|tangzhuang|harem|hanfu|geisha|ninja|\bnun\b|witch|vampire|dancer|samurai|heian|junihitoe|shrine maiden|gothic lolita|lolita fashion/i],
 [5,/\bhair\b|ponytail|twintails|braid|bangs|ahoge|sidelocks|\bbun\b|drill|bob cut|hime cut|ponytails?|ringlets|pigtails|sidecut|undercut|mohawk|pompadour|bowl cut|afro|dreadlocks|hairstyle|\bfringe\b/],
 [11,/panties|\bbra\b|underwear|lingerie|thong|garter|camisole|bikini bottom|\bnude\b|topless|briefs|boxers|fundoshi|jockstrap|g-string|negligee|babydoll|chemise|bustier|corset|pasties|maebari|bottomless|sarashi|loincloth|sarong|chest wrap|chest binder/],
 [12,/fishnets$|fishnet (legwear|pantyhose|thighhighs)|thighhighs|pantyhose|socks|stockings|legwear|kneehighs|shoes|boots|sandals|barefoot|heels|loafers|sneakers|leggings|zettai|\btabi\b|\bgeta\b|zouri|zori|waraji|split-toe/],
@@ -433,7 +614,8 @@ const wiki=t=>window.open(API+'wiki_pages/'+encodeURIComponent(t.replace(/ /g,'_
 /* connections: alias fixes, series links, related tags */
 const ali=new Map(),imp=new Map(),busy=new Set();let relT='';
 const US=t=>t.replace(/ /g,'_'),kao=t=>t.includes('_')&&t.length<=12&&!/\s/.test(t)&&!/[a-z]{2}/i.test(t),SP=t=>{const u=t.trim();return kao(u)?u:t.replace(/_/g,' ')},
- fixUS=v=>v.split(',').map(g=>kao(g.trim().replace(/^\(+/,'').replace(/(:[-\d.]+)?\)+$/,''))?g:g.replace(/_/g,' ')).join(',');
+ fixOne=v=>v.split(',').map(g=>kao(g.trim().replace(/^\(+/,'').replace(/(:[-\d.]+)?\)+$/,''))?g:g.replace(/_/g,' ')).join(','),
+ fixUS=v=>{const{P}=scan(v);let o='',l=0;P.forEach(([a,b])=>{o+=v.slice(l,a);const g=v.slice(a,b);o+=RAWRE.test(g.trim().replace(/^\(+/,''))?g:fixOne(g);l=b});return o+v.slice(l)};
 async function jget(u){const r=await fetch(API+u);if(!r.ok)throw 0;return r.json()}
 function addTag(n){if(tags.some(x=>x.t===n))return;tags.push({t:n,w:1});raw.value=ser(tags);render()}
 function swapTag(a,b){const i=tags.findIndex(y=>y.t===a);if(i<0)return;if(tags.some(y=>y.t===b))tags.splice(i,1);else tags[i].t=b;unk.delete(a);raw.value=ser(tags);render()}
@@ -446,7 +628,7 @@ async function lookup(){if(live===false)return;
    try{const j=await jget('tag_implications.json?limit=10&search[status]=active&search[antecedent_name]='+encodeURIComponent(US(t))),names=j.map(o=>SP(o.consequent_name));
     if(names.length){const m=await jget('tags.json?limit=100&only=name,category&search[name_comma]='+encodeURIComponent(names.map(US).join(',')));m.forEach(o=>cache.set(SP(o.name),o.category))}
     imp.set(t,names.filter(n=>cache.get(n)===3))}catch(e){imp.set(t,[])}drawConn()}}}
-function sugLast(){const t=tags.length?tags[tags.length-1].t:'';if(!t){lastSug={t:'',list:[],open:lastSug.open};return}
+function sugLast(){const t0=tags.length?tags[tags.length-1].t:'',t=isRaw(t0)?'':t0;if(!t){lastSug={t:'',list:[],open:lastSug.open};return}
  if(t===lastSug.t||live===false)return;lastSug={t,list:[],open:lastSug.open};clearTimeout(sgt);
  sgt=setTimeout(async()=>{try{const l=(await relFor(t,'general')).map(o=>o.n).slice(0,30);await verify(l);if(lastSug.t!==t)return;lastSug.list=l.filter(okName);drawConn()}catch(e){}},700)}
 function drawConn(){const box=$('#conn'),have=new Set(tags.map(x=>x.t)),rows=[];
@@ -514,7 +696,7 @@ $('#gclose').onclick=()=>{const g=$('#guide');g.open=false;g.scrollIntoView({beh
 /* v7 features: lock, mute, select, history, files, quick-fill */
 const muted=new Set(),locked=new Set(),pick=new Set();let selMode=false,lastSug={t:'',list:[],open:false},sgt,hrt;
 try{const d=JSON.parse(localStorage.getItem('ape')||'{}');(d.m||[]).forEach(x=>muted.add(x));(d.k||[]).forEach(x=>locked.add(x))}catch(e){}
-function sortTags(a){const fr=a.filter(x=>!locked.has(x.t)).map((x,i)=>[x,i]).sort((p,q)=>RK(grp(p[0].t))-RK(grp(q[0].t))||p[1]-q[1]).map(p=>p[0]);let f=0;return a.map(x=>locked.has(x.t)?x:fr[f++])}
+function sortTags(a){const lk=x=>locked.has(x.t)||isRaw(x.t),fr=a.filter(x=>!lk(x)).map((x,i)=>[x,i]).sort((p,q)=>RK(grp(p[0].t))-RK(grp(q[0].t))||p[1]-q[1]).map(p=>p[0]);let f=0;return a.map(x=>lk(x)?x:fr[f++])}
 const flip=(set,n)=>{set.has(n)?set.delete(n):set.add(n);save();render()};
 let pmin=false;function pill(c,l,s){const e=$('#sync');e.className=(c+(pmin?' min':'')).trim();e.innerHTML='<span class="l"></span><span class="s"></span>';e.firstChild.textContent=l;e.lastChild.textContent=s}
 addEventListener('scroll',()=>{const m=scrollY>50;if(m===pmin)return;pmin=m;$('#sync').classList.toggle('min',m)},{passive:true});
@@ -527,7 +709,7 @@ async function quickFill(t){await lookup();const have=new Set(tags.map(y=>y.t)),
 const selbar=document.createElement('div');selbar.id='selbar';selbar.hidden=true;document.body.append(selbar);
 function selBar(){selbar.hidden=!selMode;$('#selb').textContent=selMode?'Done':'Select';if(!selMode)return;selbar.textContent='';
  const sp=document.createElement('span');sp.textContent=pick.size+' selected';selbar.append(sp);
- const bt=(l,f)=>{const b=document.createElement('button');b.type='button';b.textContent=l;b.onclick=()=>{f();selBar()};selbar.append(b)},ap=f=>{tags.forEach(x=>{if(pick.has(x.t))x.w=f(x.w)});raw.value=ser(tags);render()},
+ const bt=(l,f)=>{const b=document.createElement('button');b.type='button';b.textContent=l;b.onclick=()=>{f();selBar()};selbar.append(b)},ap=f=>{tags.forEach(x=>{if(pick.has(x.t)&&!isRaw(x.t))x.w=f(x.w)});raw.value=ser(tags);render()},
   fl=set=>()=>{const a=[...pick],all=a.length&&a.every(n=>set.has(n));a.forEach(n=>all?set.delete(n):set.add(n));save();render()};
  bt('All',()=>{tags.forEach(x=>pick.add(x.t));render()});bt('−',()=>ap(w=>Math.round(Math.max(0,w-.05)*100)/100));bt('+',()=>ap(w=>Math.round(Math.min(10,w+.05)*100)/100));bt('Weight 1',()=>ap(()=>1));
  bt('Mute',fl(muted));bt('Lock',fl(locked));bt('Move to end',()=>{tags=tags.filter(x=>!pick.has(x.t)).concat(tags.filter(x=>pick.has(x.t)));raw.value=ser(tags);render()});
@@ -546,14 +728,14 @@ function showHist(){relT='';rel.hidden=false;rel.innerHTML='';const hd=document.
 $('#hbtn').onclick=showHist;$('#copy').addEventListener('click',recHist);
 const dl=(n,t,m)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:m}));a.download=n;document.body.append(a);a.click();a.remove()};
 $('#sv1').onclick=()=>dl('prompt.txt',$('#out').textContent+($('#neg').value.trim()?'\n\nNegative prompt: '+$('#neg').value.trim():''),'text/plain');
-$('#sv2').onclick=()=>dl('prompt.json',JSON.stringify({tags:raw.value,sentence:$('#nl').value,negative:$('#neg').value,muted:[...muted],locked:[...locked],groups:[...ovr],snippets:snips},null,1),'application/json');
+$('#sv2').onclick=()=>dl('prompt.json',JSON.stringify({tags:raw.value,sentence:$('#nl').value,negative:$('#neg').value,muted:[...muted],locked:[...locked],groups:[...ovr],cats:CAT,swarm:SV,snippets:snips},null,1),'application/json');
 $('#ldb').onclick=()=>$('#ldf').click();
 $('#ldf').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const t=await f.text();recHist();
- try{const j=JSON.parse(t);if(j&&typeof j==='object'&&'tags' in j){raw.value=j.tags||'';$('#nl').value=j.sentence||'';$('#neg').value=j.negative||'';muted.clear();locked.clear();(j.muted||[]).forEach(x=>muted.add(x));(j.locked||[]).forEach(x=>locked.add(x));if(j.snippets)snips=j.snippets;if(Array.isArray(j.groups)){j.groups.forEach(q=>{if(Array.isArray(q)&&typeof q[0]==='string'&&q[1]>=0&&q[1]<GN.length)ovr.set(q[0],+q[1])});saveOvr()}drawSnips();commit(false);return}}catch(x){}
+ try{const j=JSON.parse(t);if(j&&typeof j==='object'&&'tags' in j){raw.value=j.tags||'';$('#nl').value=j.sentence||'';$('#neg').value=j.negative||'';muted.clear();locked.clear();(j.muted||[]).forEach(x=>muted.add(x));(j.locked||[]).forEach(x=>locked.add(x));if(j.snippets)snips=j.snippets;if(j.cats)catImport(j.cats);if(j.swarm){svApply(j.swarm);svSave();svSync()}if(Array.isArray(j.groups)){j.groups.forEach(q=>{if(Array.isArray(q)&&typeof q[0]==='string'&&q[1]>=0&&q[1]<GN.length)ovr.set(q[0],+q[1])});saveOvr()}drawSnips();commit(false);return}}catch(x){}
  raw.value=t.split(/\r?\n/).filter(l=>l.trim()&&!/^negative prompt:/i.test(l)).join(', ');commit(false)};
 $('#cas').onchange=e=>{const v=e.target.value;e.target.value='';if(!v)return;
- const T={u:()=>finalTags().split('\n').map(l=>l.split(', ').map(x=>x.replace(/ /g,'_')).join(', ')).join('\n'),w:()=>ser(tags.filter(x=>!muted.has(x.t)).map(x=>({t:x.t,w:1}))),o:()=>finalTags().replace(/,?\n/g,', ')}[v](),nl=$('#nl').value.trim();
- navigator.clipboard.writeText([T,nl].filter(Boolean).join('\n')).then(()=>{const o=e.target.options[0];o.textContent='copied!';setTimeout(()=>{o.textContent='choose…'},1200)})};
+ const T={u:()=>finalTags().split('\n').map(l=>{const tc=/,\s*$/.test(l);return split(l).map(p=>p.trim()).filter(Boolean).map(p=>isRaw(p)?p:p.replace(/ /g,'_')).join(', ')+(tc?',':'')}).join('\n'),w:()=>ser(tags.filter(x=>!muted.has(x.t)).map(x=>({t:x.t,w:1}))),o:()=>finalTags().replace(/,?\n/g,', '),sv:svBlockText,vc:svVarCalls}[v](),nl=(v==='sv'||v==='vc')?'':$('#nl').value.trim();
+ if(!T){const o=e.target.options[0];o.textContent='nothing to copy';setTimeout(()=>{o.textContent='choose…'},1200);return}navigator.clipboard.writeText([T,nl].filter(Boolean).join('\n')).then(()=>{const o=e.target.options[0];o.textContent='copied!';setTimeout(()=>{o.textContent='choose…'},1200)})};
 const MT={'Mute':'Keep the block but leave it out of the final prompt','Unmute':'Put the block back into the final prompt','Lock':'Keep this block in its place when you press Sort','Unlock':'Let Sort move this block again','Quick-fill':'Add the series and the usual hair, eyes and outfit tags for this character','Delete':'Remove this block','Danbooru wiki ↗':'Open this tag on the Danbooru wiki (new tab)','−1':'Lower the weight by 1','−0.05':'Lower the weight by 0.05 (hold to repeat)','+0.05':'Raise the weight by 0.05 (hold to repeat)','+1':'Raise the weight by 1','1 (reset)':'Back to normal weight 1','All':'Select every block','−':'Lower the weight of the selected blocks by 0.05','+':'Raise the weight of the selected blocks by 0.05','Weight 1':'Set selected blocks to normal weight','Move to end':'Move selected blocks to the end','Clear':'Unselect everything','✕':'Close'};
 function tipBtns(r){r.querySelectorAll('button').forEach(b=>{const t=MT[b.textContent.trim()];if(t&&!b.title)b.title=t})}
 const TIP={sort:'Group the tags in a good order (locked blocks stay put)',clean:'Fix formatting and remove duplicates without changing the order',undo:'Undo the last change (Ctrl+Z)',redo:'Redo (Ctrl+Y)',rw:'Set every weight back to 1',clr:'Remove all tags (Undo brings them back)',selb:'Pick several blocks to change them together',rzp:'Make the blocks bigger',hbtn:'Open earlier versions of your prompt',sv1:'Download the prompt as a text file',sv2:'Download everything (tags, sentence, negative, mute and lock) as a file',ldb:'Load a .txt or .json file you saved',cas:'Copy the prompt in another format',copy:'Copy exactly the text shown in Final prompt (Ctrl+Enter in the tag box)',copy2:'Copy the final prompt',undo2:'Undo the last change',copyn:'Copy the negative prompt',ssave:'Save the current tags under this name to reuse later',bk:'Copy a backup of your boxes and snippets',rs:'Paste a backup to restore it',lay:'Grouped lines: one line per part. One line: a single comma list',ord:'Put the tags or the sentence first',bgsel:'Color used when the background is added automatically'};
@@ -680,21 +862,24 @@ Climbing / motion|climbing,jumping,running,walking,swimming,diving,riding,flying
 Instruments|guitar,electric guitar,acoustic guitar,bass guitar,violin,piano,keyboard (instrument),drum set,flute,microphone,playing instrument,instrument case,holding instrument,music stand
 Pose: legs|lotus position,half lotus position,royal ease,crossed legs,legs together,legs apart,spread legs,legs up,leg up,knees up,knees together feet apart,pigeon-toed`.split('\n').forEach(l=>{const[a,b]=l.split('|');FAM.push({l:a,m:b.split(',')})});
 /*ENDFAM2*/
+(function(){let on=false;try{on=localStorage.getItem('ape-lines')==='1'}catch(e){}
+ const ap=()=>{ch.classList.toggle('lines',on);$('#lnb').setAttribute('aria-pressed',String(on));try{localStorage.setItem('ape-lines',on?'1':'0')}catch(e){}};
+ $('#lnb').onclick=()=>{on=!on;ap();lastSig=null;render()};ap()})();
 (function(){let cs=1;try{cs=+localStorage.getItem('ape-cs')||1}catch(e){}
  const ap=()=>{cs=Math.min(1.8,Math.max(.7,Math.round(cs*10)/10));document.documentElement.style.setProperty('--cs',cs);$('#rzv').textContent=Math.round(cs*100)+'%';try{localStorage.setItem('ape-cs',cs)}catch(e){}};
  $('#rzm').onclick=()=>{cs-=.1;ap()};$('#rzp').onclick=()=>{cs+=.1;ap()};ap()})();
 
 
 
-function split(s){const o=[];let d=0,b='';for(let i=0;i<s.length;i++){const c=s[i];if(c==='\\'){b+=c+(s[++i]||'');continue}
- if(c==='('&&(d>0||!b.trim()))d++;else if(c===')'&&d>0)d--;if(c===','&&!d){o.push(b);b=''}else b+=c}o.push(b);return o}
-function parse(s){return split(s).map(p=>p.trim()).filter(Boolean).map(p=>{const m=p.match(/^\((.*):\s*(-?(?:\d+\.?\d*|\.\d+))\)$/);
+function split(s){return scan(s).P.map(([a,b])=>s.slice(a,b))}
+function parse(s){return split(s).map(p=>p.trim()).filter(Boolean).map(p=>{if(RAWRE.test(p))return{t:p,w:1};const m=p.match(/^\((.*):\s*(-?(?:\d+\.?\d*|\.\d+))\)$/);
+ if(m&&RAWRE.test(m[1].trim()))return{t:m[1].trim(),w:Math.round(Math.min(10,Math.max(0,+m[2]))*100)/100};
  const t=SP((m?m[1]:p).replace(/\\([()])/g,'$1')).replace(/\s+/g,' ').trim().toLowerCase();return{t,w:m?Math.round(Math.min(10,Math.max(0,+m[2]))*100)/100:1}})}
-const ser=a=>a.map(x=>{const e=x.t.replace(/([()])/g,'\\$1');return x.w!==1?`(${e}:${x.w})`:e}).join(', ');
+const ser=a=>a.map(x=>{const e=isRaw(x.t)?x.t:x.t.replace(/([()])/g,'\\$1');return x.w!==1?`(${e}:${x.w})`:e}).join(', ');
 const ovr=new Map();try{JSON.parse(localStorage.getItem('ape-ovr')||'[]').forEach(p=>ovr.set(p[0],+p[1]))}catch(e){}
 const saveOvr=()=>{try{localStorage.setItem('ape-ovr',JSON.stringify([...ovr]))}catch(e){}};
-function grp(t){if(ovr.has(t))return ovr.get(t);const c=cache.get(t);if(c===1||c===5||META.test(t))return 0;if(c===3)return 2;if(c===4)return 4;
- for(const[i,r]of RULES)if(r.test(t))return i;if(/\((series|franchise)\)$/.test(t))return 2;if(/ \((meme)\)$/.test(t))return 18;if(/ \((object|creature|species|style|symbol|phrase|brand|food|vehicle|weapon|animal|cosplay|effect)\)$/.test(t))return 17;if(/ \([^()]+\)$/.test(t))return 4;return inh.has(t)?inh.get(t):17}
+function grp(t){if(ovr.has(t)){const v=ovr.get(t);if(GN[v])return v}if(isRaw(t))return 19;if(CT.has(t))return CT.get(t);const c=cache.get(t);if(c===1||c===5||META.test(t))return 0;if(c===3)return 2;if(c===4)return 4;
+ if(/\((series|franchise)\)$/.test(t))return 2;for(const[i,r]of RULES)if(r.test(t))return i;if(/ \((meme)\)$/.test(t))return 18;if(/ \((object|creature|species|style|symbol|phrase|brand|food|vehicle|weapon|animal|cosplay|effect)\)$/.test(t))return 17;if(/ \([^()]+\)$/.test(t))return 4;return inh.has(t)?inh.get(t):17}
 const inh=new Map(),gb=new Set();
 const guess=new Map();const AUTO='ape-auto';let autoM={};try{autoM=JSON.parse(localStorage.getItem(AUTO)||'{}')}catch(e){}
 for(const k in autoM){inh.set(k,autoM[k][0]);guess.set(k,autoM[k][1])}
@@ -704,70 +889,122 @@ const KW=[[0,/\b(image|artwork|watermark|censor\w*|resolution|translation|medium
 async function wikiG(t){const k='wg|'+t,c=cget(k);if(c!=null)return c===-1?17:c;let g=17;
  try{const r=await fetch(API+'wiki_pages/'+encodeURIComponent(US(t))+'.json');if(r.ok){const b=(await r.json()).body||'';
   for(const m of b.matchAll(/tag[ _]group:([a-z0-9_ ]+)/gi)){const n=m[1].toLowerCase(),h=TGM.find(q=>q[0].test(n));if(h){g=h[1];break}}
-  if(g===17){const tx=b.replace(/\[\[|\]\]|h\d\.|\[\/?[a-z]+\]/gi,' ').slice(0,600).toLowerCase(),sc=KW.map(([q,re])=>[q,(tx.match(re)||[]).length]).sort((a,b)=>b[1]-a[1]);
-   if(sc[0][1]>=2&&sc[0][1]>=2*sc[1][1])g=sc[0][0]}}}catch(e){return 17}
+  if(g===17){const tx=b.replace(/\[\[|\]\]|h\d\.|\[\/?[a-z]+\]/gi,' ').slice(0,600).toLowerCase();
+   if(/\bmemes?\b|internet (slang|culture|meme)|catchphrase|viral/.test(tx))g=18;else{const sc=KW.map(([q,re])=>[q,(tx.match(re)||[]).length]).sort((a,b)=>b[1]-a[1]);
+   if(sc[0][1]>=(sc[0][0]===5?3:2)&&sc[0][1]>=2*sc[1][1])g=sc[0][0]}}}}catch(e){return 17}
  cset(k,g===17?-1:g);return g}
 const ruleG=t=>{for(const[i,r]of RULES)if(r.test(t))return i;return 17};
 function wordG(t){const w=t.replace(/\(.*?\)/g,' ').split(/[\s\-_:']+/).filter(x=>x.length>2).sort((a,b)=>b.length-a.length),last=t.split(' ').pop();
  for(const x of [last,...w]){const g=ruleG(x);if(g!==17)return g}return 17}
-const isWeak=t=>(guess.get(t)||'').includes('weak');
+{let done=0;try{done=localStorage.getItem('ape-fix-hair1')}catch(e){}if(!done){let c=0;for(const k of Object.keys(autoM))if(autoM[k][0]===5&&!/parent tags|alias/.test(autoM[k][1]||'')){guess.delete(k);inh.delete(k);delete autoM[k];delete apiC['wg|'+k];c=1}
+ if(c)try{localStorage.setItem(AUTO,JSON.stringify(autoM));localStorage.setItem(AC,JSON.stringify(apiC))}catch(e){}try{localStorage.setItem('ape-fix-hair1','1')}catch(e){}}}
+function byGuess(t){if(!inh.has(t)||ovr.has(t))return false;const v=inh.get(t);inh.delete(t);const r=grp(t)===17;inh.set(t,v);return r}
+const isWeak=t=>(guess.get(t)||'').includes('weak')&&byGuess(t);
+{let ch=0;for(const k of [...guess.keys()])if(ruleG(k)!==17){guess.delete(k);inh.delete(k);if(autoM[k]){delete autoM[k];ch=1}}if(ch)try{localStorage.setItem(AUTO,JSON.stringify(autoM))}catch(e){}}
 let hl=-1;
-function applyHl(){[...$('#leg').children].forEach((x,i)=>x.classList.toggle('hl',i===hl));[...ch.children].forEach(c=>{const x=tags[+c.dataset.i];c.style.opacity=hl<0||!x||grp(x.t)===hl?'':'.25'})}
+function applyHl(){[...$('#leg').children].forEach(x=>x.classList.toggle('hl',+x.dataset.g===hl));[...ch.children].forEach(c=>{const x=tags[+c.dataset.i];c.style.opacity=hl<0||!x||grp(x.t)===hl?'':'.25'})}
 function updGrp(gc){const n=[...guess.keys()].filter(isWeak).length;$('#gres').textContent='Reset manual groups to Auto ('+ovr.size+')';$('#gres').disabled=!ovr.size;$('#gclr').textContent='Clear weak guesses ('+n+')';$('#gclr').disabled=!n;const wk=tags.filter(x=>isWeak(x.t)).length,gn=(gc[17]||0)+wk;$('#ggo').textContent='Guess uncategorized ('+gn+')';$('#ggo').disabled=!gn;applyHl()}
+
 async function guessTag(t){const off=live===false;let g=17,cur=[t];const seen=new Set(cur);
    for(let d=0;d<3&&g===17&&cur.length&&!off;d++){const nx=[];
     for(const n of cur){const k='g|'+n;let l=cget(k);if(!l){const j=await jget('tag_implications.json?limit=20&search[status]=active&search[antecedent_name]='+encodeURIComponent(US(n)));l=j.map(o=>SP(o.consequent_name));cset(k,l)}
      for(const p of l){if(seen.has(p))continue;seen.add(p);const q=grp(p);if(g===17&&![0,2,3,4,17,18].includes(q))g=q;nx.push(p)}}
     cur=nx}
+   if(g===17&&!off){try{const k='al|'+t;let l=cget(k);if(!l){const j=await jget('tag_aliases.json?limit=10&search[status]=active&search[antecedent_name]='+encodeURIComponent(US(t)));l=j.map(o=>SP(o.consequent_name));cset(k,l)}
+    for(const p of l){const q=grp(p);if(![0,2,3,4,17,18].includes(q)){g=q;guess.set(t,'its alias');break}}}catch(e){}}
    if(g===17&&!off){g=await wikiG(t);if(g!==17)guess.set(t,'the wiki text')}
    if(g===17&&!off){const rl=(await relFor(t,'general')).map(o=>o.n).slice(0,25),v={};let m=0;
     rl.forEach(n=>{const q=grp(n);if([0,2,3,4,17,18].includes(q))return;v[q]=(v[q]||0)+1;m++});
     const top=Object.entries(v).sort((p,q)=>q[1]-p[1])[0];
-    if(top&&top[1]>=4&&top[1]/m>=.45){g=+top[0];guess.set(t,'related tags')}
-    else if(top){g=+top[0];guess.set(t,'related tags (weak)')}}
+    const nr=rl.length||1;
+    if(top&&top[1]>=5&&top[1]/nr>=.3&&top[1]/m>=.45){g=+top[0];guess.set(t,'related tags')}
+    else if(top&&top[1]>=3&&top[1]/nr>=.2){g=+top[0];guess.set(t,'related tags (weak)')}}
    if(g===17){const w=wordG(t);if(w!==17){g=w;guess.set(t,'its words (weak)')}}
    if(g===17){g=13;guess.set(t,'default (weak)')}
    inh.set(t,g);autoSave(t,g);lastSig=null;render();return g}
 async function chainG(){for(const x of tags){const t=x.t;if(grp(t)!==17||gb.has(t)||[1,3,4,5].includes(cache.get(t)))continue;gb.add(t);try{await guessTag(t)}catch(e){gb.delete(t)}}}
 
-function commit(sort,trail){const seen=new Set();tags=parse(raw.value).filter(x=>!seen.has(x.t)&&seen.add(x.t));
+function commit(sort,trail){const seen=new Set();tags=parse(raw.value).filter(x=>isRaw(x.t)||(!seen.has(x.t)&&seen.add(x.t)));
  if(sort)tags=sortTags(tags);
  raw.value=ser(tags)+(trail&&tags.length?', ':'');render()}
 function render(){if(drag&&drag.on)return;
  const sig=tags.map(x=>x.t+'|'+x.w+'|'+catOf(x.t)+'|'+grp(x.t)+'|'+(unk.has(x.t)?1:0)+(muted.has(x.t)?'m':'')+(locked.has(x.t)?'k':'')+(pick.has(x.t)?'s':'')).join('\n');
  if(sig!==lastSig){lastSig=sig;draw()}
  warn();out();save();fetchMeta();conn();clearTimeout(ht);ht=setTimeout(snap,450);clearTimeout(hrt);hrt=setTimeout(recHist,8000)}
+const chipAt=i=>ch.querySelector('.chip[data-i="'+i+'"]'),lineOf=t=>{const k=LINES.findIndex(l=>l.includes(grp(t)));return k<0?LINES.length-1:k};
 function draw(){ch.innerHTML='';
  tags.forEach((x,i)=>{const g=grp(x.t),e=document.createElement('span');e.className='chip'+(unk.has(x.t)?' unk':'');
-  e.style.setProperty('--h',HUE(g));e.style.setProperty('--l',LT(g));if(g===17)e.classList.add('ng');if((guess.get(x.t)||'').includes('weak'))e.classList.add('weak');if(x.w===0)e.classList.add('zero');e.dataset.i=i;e.title=GN[g]+(ovr.has(x.t)?' (set by you)':guess.has(x.t)?' (guessed from '+guess.get(x.t)+')':'');if(x.t.length>50)e.classList.add("xl");else if(x.t.length>30)e.classList.add("lg");if(muted.has(x.t))e.classList.add("mute");if(locked.has(x.t))e.classList.add("lock");if(pick.has(x.t))e.classList.add("sel");
+  e.style.setProperty('--h',HUE(g));e.style.setProperty('--s',SAT(g));e.style.setProperty('--l',LT(g));if(g===17)e.classList.add('ng');if(isWeak(x.t))e.classList.add('weak');if(x.w===0)e.classList.add('zero');e.dataset.i=i;e.title=isRaw(x.t)?rawInfo(x.t)[0]+' (SwarmUI syntax, kept exactly as typed)'+(ovr.has(x.t)?' · in group: '+GN[g]:''):GN[g]+(ovr.has(x.t)?' (set by you)':guess.has(x.t)&&byGuess(x.t)?' (guessed from '+guess.get(x.t)+')':'');if(isRaw(x.t))e.classList.add('raw');if(x.t.length>50)e.classList.add("xl");else if(x.t.length>30)e.classList.add("lg");if(muted.has(x.t))e.classList.add("mute");if(locked.has(x.t))e.classList.add("lock");if(pick.has(x.t))e.classList.add("sel");
   const gr=document.createElement('span');gr.className='grip';gr.textContent='⠿';
   const n=document.createElement('span');n.textContent=x.t;const k=catOf(x.t);if(k)n.className='c'+k;
   e.append(gr,n);if(x.w!==1){const b=document.createElement('b');b.textContent=x.w;e.append(b)}
-  const d=document.createElement('i');d.textContent='×';e.append(d);ch.append(e)});
+  const d=document.createElement('i');d.textContent='×';e.append(d);const nx=tags[i+1];ch.append(e);if(nx&&lineOf(x.t)!==lineOf(nx.t)){const br=document.createElement('span');br.className='brk';br.setAttribute('aria-hidden','true');ch.append(br)}});
  if(!tags.length)ch.innerHTML='<span class="hint">Tags appear here as you type.</span>';
- const gc={};tags.forEach(x=>{const g=grp(x.t);gc[g]=(gc[g]||0)+1});[...$('#leg').children].forEach((s,i)=>{s.textContent=GN[i]+(gc[i]?' · '+gc[i]:'');s.style.opacity=gc[i]?1:.5});updGrp(gc)}
+ const gc={};tags.forEach(x=>{const g=grp(x.t);gc[g]=(gc[g]||0)+1});[...$('#leg').children].forEach(s=>{const i=+s.dataset.g;s.textContent=GN[i]+(gc[i]?' · '+gc[i]:'');s.style.opacity=gc[i]?1:.5});updGrp(gc)}
 function warn(){const w=[],ts=tags.map(x=>x.t),cnt={};
  split(raw.value).map(p=>p.trim()).filter(Boolean).length>tags.length&&w.push('Duplicate tags will be removed on clean up.');
  const z=tags.filter(x=>x.w===0).map(x=>x.t);z.length&&w.push('Weight 0 has no effect: '+z.join(', '));
  const hi=tags.filter(x=>x.w>1.6).map(x=>x.t);
+ if(SV.on||tags.some(x=>x.t[0]==='<'&&isRaw(x.t)))tags.filter(x=>/^\{[^{}$~]*\|[^{}$~]*\}$/.test(x.t)).forEach(x=>w.push('A1111 style: '+x.t+' (SwarmUI reads <random:'+x.t.slice(1,-1)+'>)'));
  PAIRS.forEach(([a,b])=>ts.includes(a)&&ts.includes(b)&&w.push(`Conflict: "${a}" and "${b}"`));
+ if(scan(raw.value).open)w.push('A SwarmUI tag is not closed (a > or } is missing). It is kept as you typed it.');
+ {const al=tags.filter(x=>!muted.has(x.t)),hd=cut(al),used=[],def=new Set();
+  al.forEach(x=>{let m=x.t.match(/^<var:\s*([^>\s]+)\s*>$/i);if(m)used.push(m[1]);m=x.t.match(/^<setvar\[\s*([^\],\s]+)/i);if(m)def.add(m[1])});
+  if(SV.on)svItems(hd,true).forEach(it=>it.sv&&def.add(it.sv));
+  [...new Set(used)].filter(n=>!def.has(n)).forEach(n=>w.push('<var:'+n+'> is used but nothing defines it. Turn on setvar export or add a <setvar['+n+']:...> block.'));
+  const c={};(finalText().match(/<(?:wildcard|wc):[^>]+>/gi)||[]).forEach(m=>c[m]=(c[m]||0)+1);
+  Object.keys(c).filter(k=>c[k]>1).forEach(k=>w.push(k+' appears '+c[k]+' times, so it rolls '+c[k]+' times and the results can differ. Save it in a variable (setvar) and use <var:...> instead.'))}
  ts.forEach(t=>{const m=t.match(/^(black|blonde|brown|red|blue|pink|white|silver|grey|green|purple|orange|aqua) (hair|eyes)$/);if(m)cnt[m[2]]=(cnt[m[2]]||0)+1});
  for(const k in cnt)cnt[k]>1&&w.push(`More than one ${k} color`);
  if(unk.size)w.push('Not on Danbooru (typo or alias): '+[...unk].filter(t=>ts.includes(t)).join(', '));
  $('#warn').innerHTML='';w.filter(x=>!x.endsWith(': ')).forEach(x=>{const d=document.createElement('div');d.textContent=x;$('#warn').append(d)});
  if(hi.length){const d=document.createElement('div');d.className='soft';d.textContent='High weight (might distort on Illustrious): '+hi.join(', ');$('#warn').append(d)}}
-function finalTags(){let a=tags.filter(x=>!muted.has(x.t));if($('#autobg').checked&&!a.some(x=>grp(x.t)===1))a.push({t:'simple background',w:1},{t:$('#bgsel').value,w:1});if($('#lay').value!=='l')return ser(a);
- const L=LINES.map(()=>[]);a.forEach(x=>{const k=LINES.findIndex(l=>l.includes(grp(x.t)));L[k<0?4:k].push(x)});
- return L.map(l=>l.sort((p,q)=>RK(grp(p.t))-RK(grp(q.t)))).filter(l=>l.length).map(l=>ser(l)+',').join('\n')}
-function out(){const t=finalTags(),n=$('#nl').value.trim();
- const s=$('#ord').value==='n'?[n,t].filter(Boolean).join('\n'):[t,n].filter(Boolean).join('\n');
- $('#out').textContent=s;$('#cnt').textContent=tags.length+' tags · '+s.length+' characters'}
-
-async function fetchMeta(){const need=tags.map(x=>x.t).filter(t=>!cache.has(t)&&!tried.has(t));if(!need.length)return;need.forEach(t=>tried.add(t));
- try{const r=await fetch(API+'tags.json?limit=1000&only=name,category,post_count&search[name_comma]='+encodeURIComponent(need.map(t=>t.replace(/ /g,'_')).join(',')));
-  const j=await r.json();const got=new Set();j.forEach(o=>{const n=SP(o.name);cache.set(n,o.category);pc.set(n,o.post_count);got.add(n)});
-  need.forEach(t=>{if(!got.has(t)&&!META.test(t))unk.add(t)});setLive(true);render()}catch(e){setLive(false)}}
-function setLive(v){live=v;$('#status').textContent=v?'Connected to Danbooru':'Offline: using built-in tag list';const e=$('#sync');pill(v?'':'off',v?'Danbooru synced':'Danbooru not synced · tap to retry',v?'Tags synced':'Not synced');
+/* SwarmUI setvar export */
+const SVN={0:'quality',1:'background',2:'series',3:'count',4:'character',5:'hair',6:'eyes',7:'headwear',8:'accessories',9:'top',10:'bottom',11:'underwear',12:'legwear',13:'pose',14:'body',15:'costume',16:'props',17:'misc',18:'meme',20:'expression'},SVI=new Set([5,6,14,7]);
+const SV={on:false,emit:true,names:{},inc:{}};let svSig='';
+function svApply(o){if(!o||typeof o!=='object')return;SV.on=!!o.on;SV.emit=o.emit!==false;SV.names={};SV.inc={};
+ if(o.names&&typeof o.names==='object')for(const k in o.names)if(+k>=0&&+k<GN.length&&typeof o.names[k]==='string')SV.names[k]=o.names[k].slice(0,40);
+ if(o.inc&&typeof o.inc==='object')for(const k in o.inc)if(+k>=0&&+k<GN.length)SV.inc[k]=!!o.inc[k];svSig=null}
+try{svApply(JSON.parse(localStorage.getItem('ape-sv')||'{}'))}catch(e){}
+const svSave=()=>{try{localStorage.setItem('ape-sv',JSON.stringify(SV))}catch(e){}};
+const svName=g=>String(SV.names[g]!=null?SV.names[g]:(SVN[g]||(g>20?GN[g]:''))).trim().replace(/[^A-Za-z0-9_-]+/g,'_').replace(/^_+|_+$/g,''),svInc=g=>SV.inc[g]!=null?!!SV.inc[g]:SVI.has(g);
+const svTok=(n,items)=>'<setvar['+n+(SV.emit?'':',false')+']:'+ser(items)+'>';
+function svItems(a,force){const its=a.map(x=>({x,g:grp(x.t)}));if(!SV.on&&!force)return its;
+ const m=new Map(),res=[];
+ its.forEach(it=>{const n=it.g===19||!svInc(it.g)?'':svName(it.g);if(!n){res.push(it);return}
+  let b=m.get(n);if(!b){b={sv:n,items:[],g:it.g};m.set(n,b);res.push(b)}b.items.push(it.x)});
+ return res}
+function lay(a){const its=svItems(a),s1=it=>it.sv?svTok(it.sv,it.items):ser([it.x]);
+ if($('#lay').value!=='l')return its.map(s1).join(', ');
+ const L=LINES.map(()=>[]);its.forEach(it=>{const k=LINES.findIndex(l=>l.includes(it.g));L[k<0?4:k].push(it)});
+ return L.map(l=>l.sort((p,q)=>RK(p.g)-RK(q.g))).filter(l=>l.length).map(l=>l.map(s1).join(', ')+',').join('\n')}
+function finalParts(){const all=tags.filter(x=>!muted.has(x.t)),ti=all.findIndex(x=>POS.test(x.t)),tail=ti>=0?all.slice(ti):[];let a=ti>=0?all.slice(0,ti):all.slice();
+ if($('#autobg').checked&&!all.some(x=>grp(x.t)===1))a.push({t:'simple background',w:1},{t:$('#bgsel').value,w:1});return{head:lay(a),tail:ser(tail)}}
+function finalTags(){const p=finalParts();return[p.head,p.tail].filter(Boolean).join('\n')}
+function finalText(){const p=finalParts(),n=$('#nl').value.trim();return[...($('#ord').value==='n'?[n,p.head]:[p.head,n]),p.tail].filter(Boolean).join('\n')}
+function out(){const s=finalText();
+ $('#out').textContent=s;$('#cnt').textContent=tags.length+' tags · '+s.length+' characters'+(SV.on?' · setvar on':'');svDraw()}
+const svLines=()=>svItems(cut(tags.filter(x=>!muted.has(x.t))),true).filter(it=>it.sv),svBlockText=()=>svLines().map(it=>svTok(it.sv,it.items)).join('\n'),svVarCalls=()=>svLines().map(it=>'<var:'+it.sv+'>').join(', ');
+function svDraw(){const box=$('#svtab');if(!box)return;
+ const hd=cut(tags.filter(x=>!muted.has(x.t))),cnt={};hd.forEach(x=>{const g=grp(x.t);if(g!==19)cnt[g]=(cnt[g]||0)+1});
+ const gs=Object.keys(cnt).map(Number).sort((a,b)=>RK(a)-RK(b)),sig=gs.join(',');
+ if(sig!==svSig){svSig=sig;box.textContent='';
+  gs.forEach(g=>{const r=document.createElement('div');r.className='svr';r.dataset.g=g;
+   const c=document.createElement('input');c.type='checkbox';c.checked=svInc(g);c.title='Put this group into a variable';
+   const l=document.createElement('span'),t=document.createElement('input');t.type='text';t.value=SV.names[g]!=null?SV.names[g]:(SVN[g]||(g>20?GN[g]:''));t.placeholder='variable name';t.spellcheck=false;t.autocapitalize='off';t.title='Name of the variable. Segments call it with <var:name>.';
+   c.onchange=()=>{SV.inc[g]=c.checked;svSave();warn();out()};t.oninput=()=>{SV.names[g]=t.value;svSave();warn();out()};r.append(c,l,t);box.append(r)});
+  if(!gs.length)box.innerHTML='<span class="hint">Add some tags and their groups appear here.</span>'}
+ [...box.querySelectorAll('.svr')].forEach(r=>{const g=+r.dataset.g;r.children[1].textContent=GN[g]+' · '+(cnt[g]||0);r.classList.toggle('off',!svInc(g)||!svName(g))});
+ const bl=svBlockText();$('#svprev').textContent=bl||'(nothing to export yet: tick a group above)';
+ const b=$('#svbadge');b.textContent=SV.on?'ON':'off';b.className=SV.on?'on':'';b.setAttribute('aria-checked',SV.on?'true':'false');$('#svon').checked=SV.on;
+ b.title=SV.on?'setvar is ON: the final prompt wraps your ticked groups in <setvar> blocks. Click to turn it OFF.':'setvar is OFF: the final prompt shows plain tags. Click to turn it ON and wrap your ticked groups in <setvar> blocks (SwarmUI).'}
+function svSync(){$('#svon').checked=SV.on;$('#svem').value=SV.emit?'y':'n';svSig=null}
+async function fetchMeta(){if(live===false)return;const need=tags.map(x=>x.t).filter(t=>!cache.has(t)&&!tried.has(t)&&!isRaw(t));if(!need.length)return;need.forEach(t=>tried.add(t));
+ for(let i=0;i<need.length;i+=80){const part=need.slice(i,i+80);
+  try{const r=await fetch(API+'tags.json?limit=1000&only=name,category,post_count&search[name_comma]='+encodeURIComponent(part.map(t=>t.replace(/ /g,'_')).join(',')));if(!r.ok)throw 0;
+   const j=await r.json();const got=new Set();j.forEach(o=>{const n=SP(o.name);cache.set(n,o.category);pc.set(n,o.post_count);got.add(n)});
+   part.forEach(t=>{if(!got.has(t)&&!META.test(t))unk.add(t)});setLive(true);render()}catch(e){need.slice(i).forEach(t=>tried.delete(t));setLive(false);return}}}
+function setLive(v){live=v;$('#status').textContent=v?'Connected to Danbooru':'Offline: using built-in tag list';const e=$('#sync');pill(v?'':'off',v?'Danbooru synced':'Danbooru not synced · tap to retry',v?'Tags synced':'Not synced · retry');
  e.title=v?'Connected to Danbooru: live tag suggestions, post counts and colors are working.':'Cannot reach Danbooru, so only a small built-in list (about 190 tags) is used. Open the file from your computer with internet, then tap here to retry.'}
 async function ping(){const e=$('#sync');pill('wait','Checking Danbooru…','Checking…');try{const r=await fetch(API+'autocomplete.json?search[query]=blonde&search[type]=tag_query&limit=1');if(!r.ok)throw 0;await r.json();setLive(true);render()}catch(x){setLive(false)}}
 $('#sync').onclick=()=>{if(live===false)ping()};
@@ -781,6 +1018,7 @@ async function verify(names){const need=[...new Set(names)].filter(n=>!pc.has(n)
 /* autocomplete */
 let items=[],sel=0,timer,ctl;
 function token(){const v=raw.value,c=raw.selectionStart,a=v.lastIndexOf(',',c-1)+1;
+ {const pc=scan(v).P.find(([x,y])=>c>=x&&c<=y);if(pc&&(RAWRE.test(v.slice(pc[0],pc[1]).trim())||scan(v).open))return{a,q:'',raw:true}}
  return{a,q:SP(v.slice(a,c).replace(/^\s*\(/,'').replace(/:[\d.]*$/,'')).trim().toLowerCase()}}
 function suggest(){const q=token().q;if(q.length<2)return hide();
  const l=LOCAL.filter(t=>t.startsWith(q)).concat(LOCAL.filter(t=>!t.startsWith(q)&&t.includes(q))).slice(0,8).map(t=>({t}));
@@ -808,7 +1046,7 @@ function accept(x){const{a}=token(),v=raw.value,b=v.slice(0,a).replace(/\s*$/,''
  if(x.c!=null)cache.set(x.t,x.c);raw.value=(b?b+', ':'')+x.t+', '+af;hide();commit(false,true);raw.focus()}
 
 raw.addEventListener('input',e=>{const p=raw.selectionStart;if(raw.value.includes('_')){const nv=fixUS(raw.value);if(nv!==raw.value){raw.value=nv;raw.setSelectionRange(p,p)}}
- if(e.data===','&&raw.selectionStart===raw.value.length){hide();commit(false,true)}else{tags=parse(raw.value);render();suggest()}});
+ if(e.data===','&&raw.selectionStart===raw.value.length&&!scan(raw.value).open){hide();commit(false,true)}else{tags=parse(raw.value);render();if(scan(raw.value).open)hide();else suggest()}});
 raw.addEventListener('paste',()=>setTimeout(()=>{hide();commit(false)},0));
 raw.addEventListener('keydown',e=>{const mod=e.ctrlKey||e.metaKey,k=e.key.toLowerCase();
  if(mod&&e.key==='Enter'){e.preventDefault();$('#copy').click();return}
@@ -822,7 +1060,7 @@ raw.addEventListener('keydown',e=>{const mod=e.ctrlKey||e.metaKey,k=e.key.toLowe
 raw.addEventListener('blur',()=>{clearTimeout(timer);ctl&&ctl.abort();hide();commit($('#autosort').checked)});
 
 /* weight */
-function setWi(i,w){w=Math.round(Math.min(10,Math.max(0,w))*100)/100;tags[i].w=w;raw.value=ser(tags);render()}
+function setWi(i,w){if(!tags[i]||isRaw(tags[i].t))return;w=Math.round(Math.min(10,Math.max(0,w))*100)/100;tags[i].w=w;raw.value=ser(tags);render()}
 function bump(i,d,keep){setWi(i,tags[i].w+d);if(keep){const p=ser(tags.slice(0,i+1)).length;raw.setSelectionRange(p,p)}}
 let wacc=0,wchip=-1,wlast=0;
 ch.addEventListener('wheel',e=>{const c=e.target.closest('.chip');if(!c)return;e.preventDefault();
@@ -853,7 +1091,7 @@ function refreshMenu(name){const i=tags.findIndex(y=>y.t===name);if(i<0){closeMe
 function applyVariant(i,nt,row){const x=tags[i],orig=x.t;
  if(row.mode==='set'){const j=tags.findIndex(y=>row.fam.m.includes(y.t));if(j>=0){if(tags[j].t===nt)tags.splice(j,1);else tags[j]={t:nt,w:tags[j].w}}else tags.splice(i+1,0,{t:nt,w:1})}
  else{if(nt===orig)return;undoMap.set(nt,orig);tags[i]={t:nt,w:x.w}}
- raw.value=ser(tags);commit(false);const keep=row.mode==='set'?orig:nt,idx=tags.findIndex(y=>y.t===nt),el=ch.children[idx];el&&el.classList.add('landed');refreshMenu(keep)}
+ raw.value=ser(tags);commit(false);const keep=row.mode==='set'?orig:nt,idx=tags.findIndex(y=>y.t===nt),el=chipAt(idx);el&&el.classList.add('landed');refreshMenu(keep)}
 function addExtra(i,o){const name=tags[i].t,j=tags.findIndex(y=>y.t===o);if(j>=0)tags.splice(j,1);else tags.splice(i+1,0,{t:o,w:1});raw.value=ser(tags);commit(false);refreshMenu(name)}
 function drawRow(r,state){const h=r.host;h.textContent='';let n=0;
  r.o.forEach(o=>{const c=pc.get(o),isCur=o===r.cur||o===r.present;if(state==='ok'&&c===0&&!isCur)return;
@@ -872,7 +1110,19 @@ function drawRow(r,state){const h=r.host;h.textContent='';let n=0;
 function place(){if(sheet()){menu.style.left='';menu.style.top='';return}
  const r=menu.getBoundingClientRect();let l=mx,t=my;if(l+r.width>innerWidth-8)l=innerWidth-r.width-8;if(t+r.height>innerHeight-8)t=innerHeight-r.height-8;
  menu.style.left=Math.max(8,l)+'px';menu.style.top=Math.max(8,t)+'px'}
-function openMenu(i,x,y){if(!tags[i])return;const t=tags[i].t;mi=i;mx=x;my=y;const tok=++mtok;menu.innerHTML='';
+const RINFO=[[/^<lora:/i,'LoRA','Loads a LoRA model. The number after the name is its strength.'],[/^<(wildcard|wc):/i,'Wildcard','Picks a random line from a wildcard file each time you generate.'],[/^<var:/i,'Variable','Inserts the text saved by a setvar.'],[/^<setvar\[/i,'Set variable','Saves text under a name so <var:name> can reuse the exact same text.'],[/^<(random|alt|alternate|fromto|repeat)\b/i,'Random / dynamic','Changes the prompt text randomly or per step.'],[/^<segment:/i,'Segment','Refines a detected area (face, hand...). The text after it is that area\'s prompt.'],[/^<region:/i,'Region','Applies the text after it to a part of the image.'],[/^<object:/i,'Object','Like region, but also inpaints the area.'],[/^<(embed|embedding):/i,'Embedding','Loads a textual inversion embedding.'],[/^<preset:|^<p:/i,'Preset','Applies a saved SwarmUI preset.'],[/^<comment:/i,'Comment','A note that is removed from the final prompt.'],[/^<break>/i,'Break','Starts a new CLIP chunk.'],[/^<(base|refiner|video|videoswap)>/i,'Stage marker','Sends the text after it only to that stage.'],[/^\{/,'Choice','Picks one of the options at random.'],[/^__/,'Wildcard','Picks a random line from a wildcard file.']];
+function rawInfo(t){for(const[r,n,d]of RINFO)if(r.test(t))return[n,d];return['SwarmUI syntax','Kept exactly as typed.']}
+function openRawMenu(i,x,y){const t=tags[i].t,inf=rawInfo(t);mi=i;mx=x;my=y;++mtok;menu.innerHTML='';menu._os=null;
+ menu._reidx=()=>{const n=tags.findIndex(y=>y.t===t);if(n>=0){i=n;mi=n}};
+ const hd=document.createElement('div');hd.className='mh';const nm=document.createElement('b');nm.textContent=t;nm.style.cssText='font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all';hd.append(nm,mb('✕','mx',closeMenu));menu.append(hd);
+ const info=document.createElement('div');info.className='mnote';info.textContent=inf[0]+': '+inf[1]+' It is kept exactly as typed: no lowercase, no underscore change and no weight.';menu.append(info);
+ {const [gw,gh]=mrow('Sort group'),sl=document.createElement('select'),had=ovr.get(t);
+  const o0=document.createElement('option');o0.value='-1';o0.textContent='None (stays on its own)';sl.append(o0);LORD.forEach(j=>{if(j===19)return;const g=GN[j],o=document.createElement('option');o.value=j;o.textContent=g;sl.append(o)});
+  sl.value=had!=null?String(had):'-1';sl.title='Put this tag inside a group. With setvar export on, it goes inside that group\'s <setvar>.';
+  sl.onchange=()=>{const v=+sl.value;v<0?ovr.delete(t):ovr.set(t,v);saveOvr();lastSig=null;render();refreshMenu(t)};gh.append(sl);menu.append(gw)}
+ const ft=document.createElement('div');ft.className='foot';if(/^\{[^{}$~]+\}$/.test(t))ft.append(mb('Convert to <random:…>','',()=>{closeMenu();tags[i].t='<random:'+t.slice(1,-1)+'>';raw.value=ser(tags);render()}));ft.append(mb('SwarmUI docs ↗','',()=>window.open('https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Features/Prompt%20Syntax.md','_blank','noopener')),mb(muted.has(t)?'Unmute':'Mute','',()=>{flip(muted,t);refreshMenu(t)}),mb('Delete','del',()=>{closeMenu();tags.splice(i,1);raw.value=ser(tags);render()}));menu.append(ft);tipBtns(menu);
+ back.style.display=sheet()?'block':'none';menu.style.display='block';place()}
+function openMenu(i,x,y){if(!tags[i])return;const t=tags[i].t;if(isRaw(t))return openRawMenu(i,x,y);mi=i;mx=x;my=y;const tok=++mtok;menu.innerHTML='';
  menu._reidx=()=>{const n=tags.findIndex(y=>y.t===t);if(n>=0){i=n;mi=n}};
  const hd=document.createElement('div');hd.className='mh';const nm=document.createElement('b');nm.textContent=t;const k=catOf(t);if(k)nm.className='c'+k;
  hd.append(nm,mb('✕','mx',closeMenu));menu.append(hd);
@@ -888,9 +1138,10 @@ function openMenu(i,x,y){if(!tags[i])return;const t=tags[i].t;mi=i;mx=x;my=y;con
   menu.append(w);drawRow(r,live!==false&&r.o.every(o=>pc.has(o))?'ok':'pend')});
  addDyn(t,tok);
  {const [gw,gh]=mrow('Sort group'),sl=document.createElement('select'),had=ovr.get(t);ovr.delete(t);const ag=grp(t);if(had!=null)ovr.set(t,had);
-  const o0=document.createElement('option');o0.value='-1';o0.textContent='Auto ('+GN[ag]+')';sl.append(o0);GN.forEach((g,j)=>{const o=document.createElement('option');o.value=j;o.textContent=g;sl.append(o)});
+  const o0=document.createElement('option');o0.value='-1';o0.textContent='Auto ('+GN[ag]+')';sl.append(o0);LORD.forEach(j=>{const g=GN[j],o=document.createElement('option');o.value=j;o.textContent=g;sl.append(o)});
   sl.value=had!=null?String(had):'-1';sl.title='Choose which sort group this tag belongs to. It is remembered on this device.';
   sl.onchange=()=>{const v=+sl.value;v<0?ovr.delete(t):ovr.set(t,v);saveOvr();lastSig=null;render();refreshMenu(t)};gh.append(sl);menu.append(gw);
+  if(had==null&&guess.has(t)&&byGuess(t)){const gn=document.createElement('div'),wk=isWeak(t);gn.className='gnote'+(wk?' weak':'');gn.textContent=wk?'Guessed (weak) from '+guess.get(t).replace(/\s*\(weak\)/,'')+'. Check it.':'Guessed from '+guess.get(t)+'.';gw.append(gn)}
   if(had==null&&(ag===17||isWeak(t))){const [qw,qh]=mrow('Guess'),wk=isWeak(t),qb=mb(wk?'Re-guess this tag':'Guess this tag','opt',async()=>{qb.disabled=true;qb.textContent='Guessing…';
     if(wk){inh.delete(t);guess.delete(t);delete autoM[t];['wg|'+t,'g|'+t,'r|'+t+'|general'].forEach(k=>delete apiC[k]);gb.delete(t)}
     try{await guessTag(t)}catch(e){gb.delete(t);qb.disabled=false;qb.textContent='Try again';hn.textContent='Could not reach Danbooru. Check the connection.';return}
@@ -918,20 +1169,20 @@ ch.addEventListener('pointerdown',e=>{const c=e.target.closest('.chip');if(!c||e
  if(e.pointerType!=='mouse'&&!e.target.closest('.grip'))return;const r=c.getBoundingClientRect();
  drag={el:c,i:+c.dataset.i,sx:e.clientX,sy:e.clientY,dx:e.clientX-r.left,dy:e.clientY-r.top,w:r.width,h:r.height,on:false};
  addEventListener('pointermove',dmove);addEventListener('pointerup',dup);addEventListener('pointercancel',dcancel);addEventListener('keydown',dkey)});
-function flipMove(fn){if(RM())return fn();const els=[...ch.children].filter(k=>k!==drag.el),f=els.map(k=>k.getBoundingClientRect());
+function flipMove(fn){if(RM())return fn();const els=[...ch.children].filter(k=>k!==drag.el&&!k.classList.contains('brk')),f=els.map(k=>k.getBoundingClientRect());
  els.forEach(k=>{k.style.transition='none';k.style.transform=''});fn();
  els.forEach((k,j)=>{const b=k.getBoundingClientRect(),x=f[j].left-b.left,y=f[j].top-b.top;if(x||y)k.style.transform=`translate(${x}px,${y}px)`});
  ch.offsetWidth;els.forEach(k=>{if(k.style.transform){k.style.transition='transform .22s cubic-bezier(.2,.8,.2,1)';k.style.transform=''}})}
 function dmove(e){const d=drag;if(!d)return;
  if(!d.on){if(Math.hypot(e.clientX-d.sx,e.clientY-d.sy)<5)return;
-  if(!d.el.isConnected){d.el=ch.children[d.i];if(!d.el){dstop();drag=null;return}const r=d.el.getBoundingClientRect();d.w=r.width;d.h=r.height}
+  if(!d.el.isConnected){d.el=chipAt(d.i);if(!d.el){dstop();drag=null;return}const r=d.el.getBoundingClientRect();d.w=r.width;d.h=r.height}
   d.on=true;closeMenu();d.ph=document.createElement('div');d.ph.className='ph';
   d.ph.style.width=d.w+'px';d.ph.style.height=d.h+'px';d.el.before(d.ph);d.el.style.width=d.w+'px';d.el.style.height=d.h+'px';
   d.el.classList.add('dragging');document.body.classList.add('dg');hide()}
  e.preventDefault&&e.cancelable&&e.preventDefault();
  d.el.style.left=(e.clientX-d.dx)+'px';d.el.style.top=(e.clientY-d.dy)+'px';
  const b=ch.parentNode,br=b.getBoundingClientRect(),x=e.clientX-br.left-b.clientLeft,y=e.clientY-br.top-b.clientTop,
-  kids=[...ch.children].filter(k=>k!==d.el&&k!==d.ph),
+  kids=[...ch.children].filter(k=>k!==d.el&&k!==d.ph&&!k.classList.contains('brk')),
   at=kids.find(k=>y<k.offsetTop||(y<=k.offsetTop+k.offsetHeight&&x<k.offsetLeft+k.offsetWidth/2))||null,
   cur=kids.find(k=>d.ph.compareDocumentPosition(k)&4)||null;
  if(at!==cur)flipMove(()=>at?at.before(d.ph):ch.append(d.ph))}
@@ -939,8 +1190,8 @@ function dstop(){removeEventListener('pointermove',dmove);removeEventListener('p
 function dcancel(){const d=drag;dstop();drag=null;if(d&&d.on){dragEnd=performance.now();lastSig=null;render()}}
 function dkey(e){if(e.key==='Escape')dcancel()}
 function dup(){const d=drag;dstop();if(!d||!d.on){drag=null;return}dragEnd=performance.now();
- let to=0;for(const k of ch.children){if(k===d.ph)break;if(k!==d.el)to++}
- const finish=()=>{drag=null;if(to!==d.i){const[m]=tags.splice(d.i,1);tags.splice(to,0,m);raw.value=ser(tags)}lastSig=null;render();const l=ch.children[to];l&&l.classList.add('landed')};
+ let to=0;for(const k of ch.children){if(k===d.ph)break;if(k!==d.el&&!k.classList.contains('brk'))to++}
+ const finish=()=>{drag=null;if(to!==d.i){const[m]=tags.splice(d.i,1);tags.splice(to,0,m);raw.value=ser(tags)}lastSig=null;render();const l=chipAt(to);l&&l.classList.add('landed')};
  if(RM())return finish();const b=ch.parentNode,br=b.getBoundingClientRect();
  Object.assign(d.el.style,{transition:'left .16s ease,top .16s ease,transform .16s ease',left:(br.left+b.clientLeft+d.ph.offsetLeft)+'px',top:(br.top+b.clientTop+d.ph.offsetTop)+'px',transform:'none'});
  setTimeout(finish,170)}
@@ -960,7 +1211,7 @@ $('#sort').onclick=()=>commit(true);$('#clean').onclick=()=>commit(false);
 $('#undo').onclick=undo;$('#undo2').onclick=undo;$('#redo').onclick=redo;
 $('#rw').onclick=()=>{tags.forEach(x=>x.w=1);raw.value=ser(tags);render()};
 $('#clr').onclick=()=>{raw.value='';tags=[];closeMenu();render()};
-['#nl','#ord','#autobg','#bgsel','#lay'].forEach(s=>$(s).addEventListener('input',()=>{out();save()}));$('#neg').addEventListener('input',save);
+['#nl','#ord','#autobg','#bgsel','#lay'].forEach(s=>$(s).addEventListener('input',()=>{warn();out();save()}));$('#neg').addEventListener('input',save);
 const copy=(t,b)=>{const ok=()=>{const o=b.dataset.o||(b.dataset.o=b.textContent);b.textContent='Copied ✓';setTimeout(()=>b.textContent=o,1200)};
  const fb=()=>{const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;opacity:0';document.body.append(a);a.select();try{document.execCommand('copy');ok()}catch(e){}a.remove()};
  navigator.clipboard?navigator.clipboard.writeText(t).then(ok,fb):fb()};
@@ -972,10 +1223,10 @@ function drawSnips(){const b=$('#snips');b.innerHTML='';snips.forEach((s,i)=>{co
  a.onclick=()=>{raw.value=(raw.value.trim()?raw.value.replace(/,\s*$/,'')+', ':'')+s.t;commit(false)};x.onclick=()=>{snips.splice(i,1);drawSnips();save()};w.append(a,x);b.append(w)});
  if(!snips.length)b.innerHTML='<span class="hint">Saved tag groups (outfits, character sets) appear here.</span>'}
 $('#ssave').onclick=()=>{const n=$('#sname').value.trim();if(!n||!tags.length)return;snips.push({n,t:ser(tags)});$('#sname').value='';drawSnips();save()};
-$('#bk').onclick=e=>copy(JSON.stringify({v:1,r:raw.value,n:$('#nl').value,g:$('#neg').value,s:snips}),e.target);
+$('#bk').onclick=e=>copy(JSON.stringify({v:1,r:raw.value,n:$('#nl').value,g:$('#neg').value,s:snips,sv:SV,cat:CAT}),e.target);
 $('#rs').onclick=()=>{const s=prompt('Paste your backup text here:');if(!s)return;
  try{const d=JSON.parse(s);if(!d||typeof d!=='object')throw 0;
-  raw.value=String(d.r||'');$('#nl').value=String(d.n||'');$('#neg').value=String(d.g||'');
+  raw.value=String(d.r||'');$('#nl').value=String(d.n||'');$('#neg').value=String(d.g||'');if(d.cat)catImport(d.cat);if(d.sv){svApply(d.sv);svSave();svSync()}
   (Array.isArray(d.s)?d.s:[]).forEach(x=>{if(x&&typeof x.n==='string'&&typeof x.t==='string'&&!snips.some(y=>y.n===x.n))snips.push({n:x.n,t:x.t})});
   drawSnips();commit(false);snap()}catch(e){alert('That is not a valid backup.')}};
 
@@ -1011,15 +1262,83 @@ function tab(n){gt.forEach(b=>b.classList.toggle('on',b.dataset.t===n));$('#g-pc
 gt.forEach(b=>b.onclick=()=>tab(b.dataset.t));
 
 /* init */
-$('#leg').addEventListener('click',e=>{const x=e.target.closest('span');if(!x)return;const i=[...$('#leg').children].indexOf(x);hl=hl===i?-1:i;applyHl()});
+$('#leg').addEventListener('click',e=>{const x=e.target.closest('span');if(!x)return;const i=+x.dataset.g;hl=hl===i?-1:i;applyHl()});
 $('#gres').onclick=()=>{if(!ovr.size||!confirm('Forget all '+ovr.size+' groups you set by hand? Tags go back to automatic groups.'))return;ovr.clear();saveOvr();closeMenu();lastSig=null;commit($('#autosort').checked)};
 $('#gclr').onclick=()=>{const w=[...guess.keys()].filter(isWeak);if(!w.length||!confirm('Forget the '+w.length+' weak (dashed) guesses? Confident guesses and your own groups stay.'))return;w.forEach(t=>{inh.delete(t);guess.delete(t);delete autoM[t];['wg|'+t,'g|'+t,'r|'+t+'|general'].forEach(k=>delete apiC[k])});try{localStorage.setItem(AUTO,JSON.stringify(autoM));localStorage.setItem(AC,JSON.stringify(apiC))}catch(e){}gb.clear();lastSig=null;commit($('#autosort').checked)};
 $('#ggo').onclick=()=>{tags.forEach(x=>{if(!isWeak(x.t))return;const t=x.t;inh.delete(t);guess.delete(t);delete autoM[t];['wg|'+t,'g|'+t,'r|'+t+'|general'].forEach(k=>delete apiC[k])});try{localStorage.setItem(AUTO,JSON.stringify(autoM));localStorage.setItem(AC,JSON.stringify(apiC))}catch(e){}gb.clear();lastSig=null;render();chainG()};
-$('#leg').innerHTML=GN.map((g,i)=>`<span class="${i===17?'ng':''}" style="--h:${HUE(i)};--l:${LT(i)}">${g}</span>`).join('');
+drawLeg();
 try{const d=JSON.parse(localStorage.getItem('ape')||'{}');raw.value=d.r||'';$('#nl').value=d.n||'';$('#neg').value=d.g||'';snips=d.s||[];if(d.l)$('#lay').value=d.l}catch(e){}
 try{if(localStorage.getItem('ape_g')==='0')$('#guide').open=false}catch(e){}
 $('#guide').addEventListener('toggle',()=>{try{localStorage.setItem('ape_g',$('#guide').open?'1':'0')}catch(e){}});
 $('#chiphint').textContent=coarse()?'Tap a block for its menu (weight, color, length). Drag the ⠿ handle to reorder. Tap × to delete.':'Scroll over a block = weight (hold Shift for ±1). Right-click = menu (weight, color, length). Drag to reorder.';
+const svSet=v=>{SV.on=v;svSave();warn();out()};
+$('#svon').onchange=e=>svSet(e.target.checked);
+$('#svbadge').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();svSet(!SV.on)});
+$('#svbadge').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();svSet(!SV.on)}});
+$('#svem').onchange=e=>{SV.emit=e.target.value==='y';svSave();warn();out()};
+$('#svexp').onclick=()=>{const p=$('#svprev'),b=p.classList.toggle('big');p.style.height='';$('#svexp').textContent=b?'Shrink preview':'Expand preview'};
+$('#svcopy').onclick=e=>{const t=svBlockText();t?copy(t,e.target):(e.target.textContent='Nothing to export',setTimeout(()=>e.target.textContent='Copy setvar block',1200))};
+$('#svvars').onclick=e=>{const t=svVarCalls();t?copy(t,e.target):(e.target.textContent='Nothing to export',setTimeout(()=>e.target.textContent='Copy var calls',1200))};
+$('#svreset').onclick=()=>{if(!confirm('Go back to the default variable names and groups?'))return;SV.names={};SV.inc={};svSig=null;svSave();warn();out()};
+const SWI={lora:['<lora:name:1>','name'],wildcard:['<wildcard:name>','name'],var:['<var:name>','name'],random:['<random:a, b>','a, b'],choice:['<random:a|b>','a|b'],rrange:['<random[1-2,]:a, b>','a, b'],alt:['<alternate:a, b>','a, b'],fromto:['<fromto[0.5]:before, after>','before, after'],segment:['<segment:face,0.6,0.5>','face'],brk:['<break>',''],comment:['<comment:note>','note']};
+$('#svins').onchange=e=>{const k=e.target.value;e.target.value='';if(!k||!SWI[k])return;const[sn,ph]=SWI[k],v=raw.value.replace(/[\s,]+$/,''),pre=v?v+', ':'';
+ raw.value=pre+sn;raw.focus();if(ph){const a=pre.length+sn.indexOf(ph);raw.setSelectionRange(a,a+ph.length)}tags=parse(raw.value);render()};
+svSync();
+
+/* settings drawer: categories */
+const cdrw=$('#cdrw'),cbk=$('#cbk'),cbtn=$('#cbtn'),clist=$('#clist'),cxo=new Set();
+function drawLeg(){const L=$('#leg');L.textContent='';LORD.forEach(i=>{const e=document.createElement('span');if(i===17)e.className='ng';else if(i===19)e.className='rw';e.dataset.g=i;e.style.setProperty('--h',HUE(i));e.style.setProperty('--s',SAT(i));e.style.setProperty('--l',LT(i));e.textContent=GN[i];L.append(e)})}
+function restyle(){[...ch.querySelectorAll('.chip')].forEach(e=>{const x=tags[+e.dataset.i];if(!x)return;const g=grp(x.t);e.style.setProperty('--h',HUE(g));e.style.setProperty('--s',SAT(g));e.style.setProperty('--l',LT(g))});[...$('#leg').children].forEach(e=>{const i=+e.dataset.g;e.style.setProperty('--h',HUE(i));e.style.setProperty('--s',SAT(i));e.style.setProperty('--l',LT(i))})}
+function catRefresh(){catApply();catSave();drawLeg();svSig=null;lastSig=null;render()}
+function catSave(){try{localStorage.setItem(CK,JSON.stringify(CAT))}catch(e){}}
+function catImport(o){CAT=catClean(o);ovr.forEach((v,k)=>{if(v>20&&!CAT.custom.some(x=>x.id===v))ovr.delete(k)});saveOvr();catRefresh();if(cdrw.classList.contains('open'))drawCats()}
+const colHex=g=>CAT.cols[g]||hsl2hex(HUE0(g),72,parseFloat(LT0(g)));
+function moveCat(g,d){const i=CAT.order.indexOf(g),j=i+d;if(j<0||j>=CAT.order.length)return;CAT.order.splice(i,1);CAT.order.splice(j,0,g);catRefresh();drawCats();const b=clist.querySelector('.cat-item[data-g="'+g+'"] .'+(d<0?'cup':'cdn'));if(b&&!b.disabled)b.focus();else{const o=clist.querySelector('.cat-item[data-g="'+g+'"] .'+(d<0?'cdn':'cup'));if(o)o.focus()}}
+function delCat(g){const x=CAT.custom.find(y=>y.id===g);if(!x||!confirm('Delete the category “'+x.name+'”? Its tags go back to their automatic groups.'))return;
+ CAT.custom=CAT.custom.filter(y=>y.id!==g);CAT.order=CAT.order.filter(i=>i!==g);delete CAT.cols[g];delete CAT.tags[g];ovr.forEach((v,k)=>{if(v===g)ovr.delete(k)});saveOvr();delete SV.names[g];delete SV.inc[g];svSave();cxo.delete(g);if(hl===g)hl=-1;catRefresh();drawCats()}
+function catDrag(e,item,g){e.preventDefault();const grip=e.currentTarget,items=[...clist.children],body=cdrw.querySelector('.drw-body');let to=-1;try{grip.setPointerCapture(e.pointerId)}catch(_){}
+ item.classList.add('dg');
+ const mv=ev=>{const y=ev.clientY;let t=items.length;for(let i=0;i<items.length;i++){const r=items[i].getBoundingClientRect();if(y<r.top+r.height/2){t=i;break}}
+  to=t;items.forEach(x=>x.classList.remove('ovt','ovb'));if(t<items.length)items[t].classList.add('ovt');else items[items.length-1].classList.add('ovb');
+  const br=body.getBoundingClientRect();if(y<br.top+36)body.scrollTop-=12;else if(y>br.bottom-36)body.scrollTop+=12};
+ const up=()=>{grip.removeEventListener('pointermove',mv);grip.removeEventListener('pointerup',up);grip.removeEventListener('pointercancel',up);
+  items.forEach(x=>x.classList.remove('dg','ovt','ovb'));
+  if(to>=0){const from=CAT.order.indexOf(g),ni=to>from?to-1:to;if(ni!==from){CAT.order.splice(from,1);CAT.order.splice(ni,0,g);catRefresh();drawCats()}}};
+ grip.addEventListener('pointermove',mv);grip.addEventListener('pointerup',up);grip.addEventListener('pointercancel',up)}
+function drawCats(){clist.textContent='';
+ CAT.order.forEach((g,idx)=>{const own=g>20,it=document.createElement('div');it.className='cat-item';it.dataset.g=g;
+  const row=document.createElement('div');row.className='cat-row';
+  const gr=document.createElement('span');gr.className='cat-grip';gr.textContent='⠿';gr.title='Drag to reorder';gr.addEventListener('pointerdown',e=>catDrag(e,it,g));
+  const col=document.createElement('input');col.type='color';col.className='cat-col';col.value=colHex(g);col.title='Color';col.setAttribute('aria-label','Color of '+GN[g]);
+  col.oninput=()=>{CAT.cols[g]=col.value;COLS[g]=hex2hsl(col.value);catSave();restyle()};
+  const nm=document.createElement('input');nm.type='text';nm.className='cat-name';nm.value=GN[g];nm.maxLength=30;nm.spellcheck=false;nm.autocomplete='off';nm.setAttribute('aria-label','Name of the category');
+  nm.oninput=()=>{const v=nm.value.replace(/\s+/g,' ').trim();if(!v)return;if(own)CAT.custom.find(y=>y.id===g).name=v;else if(v===GN0[g])delete CAT.names[g];else CAT.names[g]=v;catApply();catSave();lastSig=null;svSig=null;render()};
+  nm.onchange=()=>{nm.value=GN[g]};
+  const up=document.createElement('button'),dn=document.createElement('button'),ex=document.createElement('button');
+  up.type=dn.type=ex.type='button';up.className='cup';dn.className='cdn';up.textContent='▲';dn.textContent='▼';ex.textContent='⋯';
+  up.setAttribute('aria-label','Move up');dn.setAttribute('aria-label','Move down');up.disabled=idx===0;dn.disabled=idx===CAT.order.length-1;
+  up.onclick=()=>moveCat(g,-1);dn.onclick=()=>moveCat(g,1);
+  const more=document.createElement('div');more.className='cat-more';more.hidden=!cxo.has(g);
+  ex.title='Tags and reset';ex.setAttribute('aria-label','Tags and reset');ex.setAttribute('aria-expanded',cxo.has(g)?'true':'false');
+  ex.onclick=()=>{cxo.has(g)?cxo.delete(g):cxo.add(g);more.hidden=!cxo.has(g);ex.setAttribute('aria-expanded',cxo.has(g)?'true':'false')};
+  const lb=document.createElement('div');lb.className='hint';lb.textContent='Always put these tags here, separated by commas. A tag you set by hand from its own menu still wins.';
+  const ta=document.createElement('textarea');ta.rows=3;ta.spellcheck=false;ta.placeholder='for example: sailor collar, school uniform';ta.value=(CAT.tags[g]||[]).join(', ');
+  ta.onchange=()=>{const l=[...new Set(ta.value.split(',').map(tnorm).filter(Boolean))].slice(0,500);l.length?CAT.tags[g]=l:delete CAT.tags[g];ta.value=l.join(', ');catRefresh()};
+  const fb=document.createElement('div');fb.className='bar';
+  if(own){const d=document.createElement('button');d.type='button';d.textContent='Delete category';d.onclick=()=>delCat(g);fb.append(d)}
+  else{const r=document.createElement('button');r.type='button';r.textContent='Reset name and color';r.onclick=()=>{delete CAT.names[g];delete CAT.cols[g];catRefresh();drawCats()};fb.append(r)}
+  more.append(lb,ta,fb);row.append(gr,col,nm,up,dn,ex);it.append(row,more);clist.append(it)});
+ $('#ccol').value=PAL[CAT.custom.length%PAL.length]}
+function cOpen(v){cdrw.classList.toggle('open',v);cbk.hidden=!v;cdrw.setAttribute('aria-hidden',v?'false':'true');cbtn.setAttribute('aria-expanded',v?'true':'false');if(v){drawCats();setTimeout(()=>$('#cclose').focus(),30)}else cbtn.focus()}
+cbtn.onclick=()=>cOpen(!cdrw.classList.contains('open'));$('#cclose').onclick=()=>cOpen(false);cbk.onclick=()=>cOpen(false);
+addEventListener('keydown',e=>{if(e.key==='Escape'&&cdrw.classList.contains('open')&&!e.defaultPrevented&&!(menu&&menu.style.display==='block'))cOpen(false)});
+$('#cadd').onclick=()=>{const n=$('#cname').value.replace(/\s+/g,' ').trim().slice(0,30);if(!n){$('#cname').focus();return}
+ if(CAT.custom.length>=40){alert('You can add up to 40 categories of your own.');return}
+ const id=CAT.next++;CAT.custom.push({id,name:n});CAT.cols[id]=$('#ccol').value;CAT.order.push(id);cxo.add(id);$('#cname').value='';catRefresh();drawCats();const last=clist.lastElementChild;if(last)last.scrollIntoView({block:'nearest'})};
+$('#cname').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('#cadd').click()}};
+$('#cord').onclick=()=>{CAT.order=null;catRefresh();drawCats()};
+$('#crall').onclick=()=>{if(!confirm('Go back to the default categories? Your own categories are deleted and names, colors and order are reset.'))return;ovr.forEach((v,k)=>{if(v>20)ovr.delete(k)});saveOvr();CAT.custom.forEach(x=>{delete SV.names[x.id];delete SV.inc[x.id]});svSave();CAT=catBase();hl=-1;cxo.clear();catRefresh();drawCats()};
 ping();demoMenu();tab(coarse()||innerWidth<700?'mob':'pc');
 drawSnips();tags=parse(raw.value);render();snap();upd();
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();$('#copy').click()}});
 </script></body></html>
